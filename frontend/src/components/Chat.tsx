@@ -35,7 +35,7 @@ export const Chat = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:8080/api/chat', { prompt: currentInput });
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/chat`, { prompt: currentInput });
       const text = response.data.reply;
 
       const assistantMessage = { 

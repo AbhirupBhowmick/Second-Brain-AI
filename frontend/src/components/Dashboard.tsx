@@ -16,9 +16,9 @@ export const Dashboard = () => {
     const fetchData = async () => {
       try {
         const [statsRes, notesRes, projectsRes] = await Promise.all([
-          axios.get('http://localhost:8080/api/dashboard/stats'),
-          axios.get('http://localhost:8080/api/notes'),
-          axios.get('http://localhost:8080/api/projects')
+          axios.get(`${import.meta.env.VITE_API_URL}/api/dashboard/stats`),
+          axios.get(`${import.meta.env.VITE_API_URL}/api/notes`),
+          axios.get(`${import.meta.env.VITE_API_URL}/api/projects`)
         ]);
         setStats({
           totalNotes: statsRes.data.totalNotes.toString(),

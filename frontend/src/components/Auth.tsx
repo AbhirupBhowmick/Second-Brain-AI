@@ -117,7 +117,7 @@ export const Auth = () => {
     onSuccess: async (tokenResponse) => {
       setLoading(true);
       try {
-        const res = await axios.post('http://localhost:8080/api/auth/google', {
+        const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
           token: tokenResponse.access_token
         });
         login(res.data);
@@ -137,7 +137,7 @@ export const Auth = () => {
     setError('');
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
     try {
-      const response = await axios.post(`http://localhost:8080${endpoint}`, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}${endpoint}`, {
         email,
         password
       });

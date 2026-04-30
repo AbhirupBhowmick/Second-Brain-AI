@@ -11,7 +11,7 @@ export const Graph = () => {
   const fetchGraphData = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:8080/api/graph');
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/graph`);
       setGraphData(response.data);
     } catch (error) {
       console.error("Graph Error:", error);

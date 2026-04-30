@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import com.secondbrain.backend.dto.ChatRequest;
 import com.secondbrain.backend.dto.ChatResponse;
 
-@CrossOrigin(origins = "http://localhost:5173", maxAge = 3600)
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {

@@ -104,7 +104,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (!projectName.trim()) return;
     setIsCreating(true);
     try {
-      await axios.post('http://localhost:8080/api/projects', { name: projectName });
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/projects`, { name: projectName });
       setProjectName('');
       closeModal();
     } catch (error) {

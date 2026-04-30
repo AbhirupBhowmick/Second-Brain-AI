@@ -18,7 +18,7 @@ export const Editor = () => {
     setSaveStatus('saving');
     console.log("Saving Note Content:", content);
     try {
-      await axios.post('http://localhost:8080/api/notes', {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/notes`, {
         title,
         content,
         createdAt: new Date().toISOString()
