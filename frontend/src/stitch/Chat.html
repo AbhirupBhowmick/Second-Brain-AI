@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Recall Chat Interface</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-dim": "#0f1524",
+                      "primary": "#7dd3fc",
+                      "on-primary-container": "#c8eaff",
+                      "outline": "#4a6070",
+                      "surface": "#0f1524",
+                      "on-tertiary-fixed-variant": "#4d2a73",
+                      "on-secondary": "#001f2e",
+                      "background": "#0a0e1a",
+                      "inverse-on-surface": "#0a0e1a",
+                      "on-secondary-fixed-variant": "#2a4a5e",
+                      "on-tertiary-container": "#e8d0ff",
+                      "on-primary": "#001f2e",
+                      "surface-container": "#141c2e",
+                      "on-background": "#e0e8f0",
+                      "primary-fixed-dim": "#7dd3fc",
+                      "outline-variant": "#2a3a48",
+                      "surface-container-low": "#111828",
+                      "secondary": "#88b4cc",
+                      "tertiary-fixed": "#e8d0ff",
+                      "on-primary-fixed-variant": "#004d73",
+                      "surface-container-high": "#1a2438",
+                      "error-container": "#3d1414",
+                      "on-tertiary-fixed": "#1a002e",
+                      "secondary-fixed": "#c0d8e8",
+                      "primary-fixed": "#c8eaff",
+                      "tertiary-fixed-dim": "#c8a0f0",
+                      "surface-container-lowest": "#0a0e1a",
+                      "secondary-container": "#1a3a4e",
+                      "surface-tint": "#7dd3fc",
+                      "on-error": "#1a0000",
+                      "inverse-primary": "#0a4c6e",
+                      "primary-container": "#0e4d6e",
+                      "tertiary": "#c8a0f0",
+                      "on-surface": "#e0e8f0",
+                      "on-primary-fixed": "#001f2e",
+                      "on-secondary-container": "#c0d8e8",
+                      "surface-variant": "#1a2438",
+                      "tertiary-container": "#3d2060",
+                      "secondary-fixed-dim": "#88b4cc",
+                      "on-secondary-fixed": "#0d1f2b",
+                      "surface-container-highest": "#202c42",
+                      "inverse-surface": "#e0e8f0",
+                      "surface-bright": "#1a2438",
+                      "on-tertiary": "#1a002e",
+                      "on-surface-variant": "#a0b4c4",
+                      "error": "#ff6b6b",
+                      "on-error-container": "#ffb3b3"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.5rem",
+                      "lg": "1rem",
+                      "xl": "1.5rem",
+                      "full": "9999px"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ],
+                      "body": [
+                              "Inter"
+                      ],
+                      "label": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {}
+      },
+          },
+        }
+      </script>
+<style>
+        .glass-panel {
+            background: rgba(15, 21, 36, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(125, 211, 252, 0.1);
+        }
+        .glass-elevated {
+            background: rgba(15, 21, 36, 0.75);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(125, 211, 252, 0.15);
+            box-shadow: 0 0 30px rgba(125, 211, 252, 0.05);
+        }
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scroll-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+      </style>
+</head>
+<body class="bg-background text-on-background font-body h-screen w-full overflow-hidden flex flex-col md:flex-row antialiased">
+<!-- SideNavBar -->
+<nav class="bg-[#0f1524]/75 backdrop-blur-2xl text-sky-300 font-inter text-sm font-medium h-screen w-64 border-r border-sky-300/10 shadow-2xl flex flex-col h-full fixed left-0 top-0 z-40 hidden md:flex">
+<div class="p-6 border-b border-sky-300/10 flex items-center space-x-3">
+<div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30 shadow-[0_0_15px_rgba(125,211,252,0.2)]">
+<span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-sky-300 tracking-wider">Glacier Pro</h1>
+<p class="text-xs text-slate-400">Deep Focus Mode</p>
+</div>
+</div>
+<div class="p-4">
+<button class="w-full py-2.5 px-4 rounded-lg bg-primary/20 border border-primary/30 text-primary hover:bg-primary/30 transition-all shadow-[0_0_15px_rgba(125,211,252,0.1)] flex items-center justify-center space-x-2">
+<span class="material-symbols-outlined text-sm">add</span>
+<span>New Project</span>
+</button>
+</div>
+<ul class="flex-1 px-3 py-2 space-y-1 overflow-y-auto scroll-hide">
+<li>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span>Knowledge Map</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined">description</span>
+<span>Notes</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-sky-300/10 text-sky-300 border-r-2 border-sky-300 ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+<span>AI Assistant</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</li>
+</ul>
+<div class="p-3 border-t border-sky-300/10 space-y-1">
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined">help</span>
+<span>Support</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-64 relative bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&amp;w=2564&amp;auto=format&amp;fit=crop')] bg-cover bg-center before:content-[''] before:absolute before:inset-0 before:bg-background/90 before:backdrop-blur-3xl before:z-0 z-10" data-alt="Abstract deep space or ocean scene with glowing translucent particles floating in a vast dark navy void, softly illuminated by distant icy blue light sources. The aesthetic is extremely dark, ethereal, and premium, evoking a sense of high-tech calmness.">
+<!-- TopAppBar (Mobile & Web) -->
+<header class="bg-[#0a0e1a]/60 backdrop-blur-xl text-sky-300 font-inter antialiased tracking-tight docked full-width top-0 border-b border-sky-300/10 shadow-[0_0_30px_rgba(125,211,252,0.05)] flex justify-between items-center px-6 py-3 w-full sticky top-0 z-50">
+<div class="flex items-center space-x-4 md:hidden">
+<button class="text-slate-400 hover:bg-sky-300/10 transition-colors p-2 rounded-lg active:scale-95 duration-200">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="text-xl font-semibold tracking-wider text-sky-300">Glacier</span>
+</div>
+<div class="hidden md:flex items-center space-x-6">
+<nav class="flex space-x-6">
+<!-- Web Top Nav omitted as Side Nav takes precedence for structural layout in this design, keeping header clean for actions -->
+</nav>
+</div>
+<div class="flex items-center space-x-3">
+<button class="text-slate-400 hover:bg-sky-300/10 transition-colors p-2 rounded-lg active:scale-95 duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-slate-400 hover:bg-sky-300/10 transition-colors p-2 rounded-lg active:scale-95 duration-200">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full border border-sky-300/20 overflow-hidden ml-2">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="Portrait of a user in moody, cinematic lighting, fitting the deep, dark ethereal atmosphere of the UI. Focus is clear and premium." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCA7hKNrnk3r-OpaRubkgAW4KNkBZt_kxLOCdW6c3oY8F6m7fi8zu2INZ3fceOFn7PupngwF4CJ7hNsTDW8hzxF4u5-UUpfKuCg08-ycT4HcrLxZr-YlkLKdIV7egiFO3N9eV2PODE61c3_St96mtG3IdOXuhI4w3QZY8djDVZ7ZkULDegm5zxNclgupHMgZJSX9zj91PPoqTwR2ysXBn84CMM8_wzjqi--vl4-skqA9_M0sNdm2f3M5ZM6s0xyZhSi0sAFfW3yF4A"/>
+</div>
+</div>
+</header>
+<!-- Chat Canvas -->
+<main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-hide z-10 flex flex-col relative pb-32">
+<!-- Date Divider -->
+<div class="flex justify-center my-4">
+<span class="text-xs font-medium text-on-surface-variant bg-surface-container/50 px-3 py-1 rounded-full border border-outline/20 glass-panel">Today</span>
+</div>
+<!-- User Message -->
+<div class="flex flex-col items-end w-full max-w-3xl ml-auto space-y-2">
+<div class="flex items-end space-x-2">
+<div class="glass-elevated px-5 py-3.5 rounded-2xl rounded-tr-sm max-w-lg text-on-surface font-body leading-relaxed border-primary/20 bg-primary/5">
+                        Can you recall what we discussed about Java Object-Oriented Programming principles last week? Specifically regarding encapsulation and inheritance.
+                    </div>
+<div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-outline/30 mb-1">
+<img alt="User" class="w-full h-full object-cover" data-alt="Portrait of a user in moody, cinematic lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBp5KC875x35RgYxOHLhpa-NViA88A2KviTlPaSvawtSYapUsPZsAHjSs-6xQKW41RJO8J708ED-61UVqqW3qih4uuoGATGAgtw7ZI_Qy3iSX9bcWrWPxPfotab55pIpVsjpf9R20QNnjsiZpY9cApUDM0VJpb9NL3RFUaveBfRmJJqNN8cZrnj61EOCkWk3psGzMZkQnsd9tz7WU0jrUA527NIT3SN7tHSHvzXQVv5bQQJPYsCtN1jpwlfopCwprbr4kZyZTX0dw8"/>
+</div>
+</div>
+<span class="text-[10px] text-on-surface-variant mr-11">10:42 AM</span>
+</div>
+<!-- AI Message -->
+<div class="flex flex-col items-start w-full max-w-4xl mr-auto space-y-2">
+<div class="flex items-start space-x-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center flex-shrink-0 border border-outline/20 mt-1 shadow-[0_0_15px_rgba(125,211,252,0.1)]">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+<div class="glass-panel px-5 py-4 rounded-2xl rounded-tl-sm max-w-2xl text-on-surface font-body leading-relaxed space-y-4">
+<p>Based on your notes from last week, we discussed the core pillars of Java OOP. Here is a summary of encapsulation and inheritance as you outlined them:</p>
+<div class="space-y-2">
+<h4 class="text-primary font-semibold text-sm tracking-wide uppercase">Encapsulation</h4>
+<p class="text-sm text-on-surface/90">You noted that it's about bundling the data (fields) and methods that operate on the data into a single unit, or class. It restricts direct access to some of an object's components, typically using <code class="bg-surface-container px-1.5 py-0.5 rounded text-primary font-mono text-xs border border-outline/20">private</code> access modifiers and providing public getters/setters.</p>
+</div>
+<div class="space-y-2">
+<h4 class="text-primary font-semibold text-sm tracking-wide uppercase">Inheritance</h4>
+<p class="text-sm text-on-surface/90">We covered how one class can acquire the properties and methods of another using the <code class="bg-surface-container px-1.5 py-0.5 rounded text-primary font-mono text-xs border border-outline/20">extends</code> keyword, establishing an IS-A relationship to promote code reusability.</p>
+</div>
+<div class="flex flex-wrap gap-2 pt-2">
+<button class="inline-flex items-center space-x-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary px-3 py-1.5 rounded-full text-xs font-medium transition-colors">
+<span class="material-symbols-outlined text-[14px]">description</span>
+<span>Source: Java OOP Basics</span>
+</button>
+<button class="inline-flex items-center space-x-1.5 bg-tertiary/10 hover:bg-tertiary/20 border border-tertiary/30 text-tertiary px-3 py-1.5 rounded-full text-xs font-medium transition-colors">
+<span class="material-symbols-outlined text-[14px]">link</span>
+<span>Related: Polymorphism Note</span>
+</button>
+</div>
+</div>
+</div>
+<span class="text-[10px] text-on-surface-variant ml-12">10:43 AM</span>
+</div>
+<!-- System Status -->
+<div class="flex justify-center my-6">
+<div class="flex items-center space-x-2 text-xs font-medium text-primary/70 bg-primary/5 px-4 py-1.5 rounded-full border border-primary/10">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span>AI Assistant is analyzing your knowledge map...</span>
+</div>
+</div>
+</main>
+<!-- Input Area (Fixed Bottom) -->
+<div class="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20 bg-gradient-to-t from-background via-background/90 to-transparent">
+<div class="max-w-4xl mx-auto">
+<div class="glass-elevated rounded-2xl p-2 flex flex-col shadow-2xl border-primary/20 focus-within:border-primary/50 transition-colors duration-300">
+<textarea class="w-full bg-transparent border-none text-on-surface placeholder-on-surface-variant focus:ring-0 resize-none px-4 py-3 min-h-[56px] max-h-[150px] overflow-y-auto scroll-hide text-sm" placeholder="Ask Glacier to recall anything from your notes..." rows="1"></textarea>
+<div class="flex justify-between items-center px-2 pb-1 pt-2 border-t border-outline/10 mt-1">
+<div class="flex space-x-1">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-xl">attach_file</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-xl">mic</span>
+</button>
+</div>
+<button class="bg-primary text-on-primary p-2 rounded-lg hover:bg-primary-fixed-dim transition-colors shadow-[0_0_15px_rgba(125,211,252,0.3)]">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+<div class="text-center mt-3">
+<p class="text-[10px] text-on-surface-variant/50 font-medium">Glacier Pro AI may produce inaccurate information about complex logic.</p>
+</div>
+</div>
+</div>
+</div>
+</body></html>

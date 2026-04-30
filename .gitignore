@@ -1,0 +1,32 @@
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build
+backend/target/
+frontend/dist/
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+backend_log.txt
+
+# Databases
+neo4j_data/
+
+# Environment
+.env
+.env.local
+
+# Gemini/AI
+.gemini/
+antigravity/
+brain/
+artifacts/
+scratch/

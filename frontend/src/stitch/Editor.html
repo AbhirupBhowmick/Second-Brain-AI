@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Glacier Pro - Note Editor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#0f1524",
+                    "primary": "#7dd3fc",
+                    "on-primary-container": "#c8eaff",
+                    "outline": "#4a6070",
+                    "surface": "#0f1524",
+                    "on-tertiary-fixed-variant": "#4d2a73",
+                    "on-secondary": "#001f2e",
+                    "background": "#0a0e1a",
+                    "inverse-on-surface": "#0a0e1a",
+                    "on-secondary-fixed-variant": "#2a4a5e",
+                    "on-tertiary-container": "#e8d0ff",
+                    "on-primary": "#001f2e",
+                    "surface-container": "#141c2e",
+                    "on-background": "#e0e8f0",
+                    "primary-fixed-dim": "#7dd3fc",
+                    "outline-variant": "#2a3a48",
+                    "surface-container-low": "#111828",
+                    "secondary": "#88b4cc",
+                    "tertiary-fixed": "#e8d0ff",
+                    "on-primary-fixed-variant": "#004d73",
+                    "surface-container-high": "#1a2438",
+                    "error-container": "#3d1414",
+                    "on-tertiary-fixed": "#1a002e",
+                    "secondary-fixed": "#c0d8e8",
+                    "primary-fixed": "#c8eaff",
+                    "tertiary-fixed-dim": "#c8a0f0",
+                    "surface-container-lowest": "#0a0e1a",
+                    "secondary-container": "#1a3a4e",
+                    "surface-tint": "#7dd3fc",
+                    "on-error": "#1a0000",
+                    "inverse-primary": "#0a4c6e",
+                    "primary-container": "#0e4d6e",
+                    "tertiary": "#c8a0f0",
+                    "on-surface": "#e0e8f0",
+                    "on-primary-fixed": "#001f2e",
+                    "on-secondary-container": "#c0d8e8",
+                    "surface-variant": "#1a2438",
+                    "tertiary-container": "#3d2060",
+                    "secondary-fixed-dim": "#88b4cc",
+                    "on-secondary-fixed": "#0d1f2b",
+                    "surface-container-highest": "#202c42",
+                    "inverse-surface": "#e0e8f0",
+                    "surface-bright": "#1a2438",
+                    "on-tertiary": "#1a002e",
+                    "on-surface-variant": "#a0b4c4",
+                    "error": "#ff6b6b",
+                    "on-error-container": "#ffb3b3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.5rem",
+                    "lg": "1rem",
+                    "xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "display": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 21, 36, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(125, 211, 252, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(125, 211, 252, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col h-full fixed left-0 top-0 z-40 h-screen w-64 border-r border-sky-300/10 shadow-2xl bg-[#0f1524]/75 backdrop-blur-2xl">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-2">
+<img alt="Glacier Logo" class="w-8 h-8 rounded-lg object-cover" data-alt="Abstract translucent glass sphere floating over a dark atmospheric background, illuminated by subtle ice-blue light, representing the Glacier Pro logo." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMGptwmq8hbRz6PGOELla7Bg8OMHuYcbilJX8GCFQ3udX-Sk4fOtEHh4kteUjFoBJG3sMZT9qF7oLqAlwn-bQBUIU1ZuAl8MGDm9V6CQGgcF35R0j5IsgZN_tCvmKh91hxJtB7sYvYnrzX6DIet-cIcaGtJtXvt862q6eq-_muRT7aV7ToFnGGm7ylt9WOicjZXKLf-CUyHsMpAo5vPBrgPnlHD-NkFBORMNzVY0_kORusZOYywSXegcfTdMsASqGCs2Asfuzlx4A"/>
+<span class="text-lg font-bold text-sky-300 font-inter text-sm font-medium">Glacier Pro</span>
+</div>
+<p class="text-xs text-on-surface-variant uppercase tracking-wider ml-11">Deep Focus Mode</p>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all font-medium text-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Project
+            </button>
+</div>
+<div class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span class="text-sm font-medium">Knowledge Map</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-sky-300/10 text-sky-300 border-r-2 border-sky-300 ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-sm font-medium">Notes</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+<span class="text-sm font-medium">AI Assistant</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</div>
+<div class="p-4 border-t border-sky-300/10 space-y-1">
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all ease-in-out duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span class="text-sm font-medium">Logout</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 flex flex-col h-full relative z-0">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-6 py-3 w-full sticky top-0 z-50 docked full-width top-0 border-b border-sky-300/10 shadow-[0_0_30px_rgba(125,211,252,0.05)] bg-[#0a0e1a]/60 backdrop-blur-xl">
+<div class="flex items-center gap-4">
+<button class="md:hidden text-slate-400 hover:text-sky-300 transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="text-xl font-semibold tracking-wider text-sky-300 font-inter antialiased tracking-tight">Glacier</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="bg-surface-container-low border border-outline-variant rounded-full py-1.5 pl-9 pr-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 placeholder:text-on-surface-variant/50 w-64 transition-all" placeholder="Search knowledge base..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-slate-400 hover:bg-sky-300/10 transition-colors active:scale-95 duration-200 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-sky-300/10 transition-colors active:scale-95 duration-200 rounded-full">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<img alt="User profile" class="w-8 h-8 rounded-full ml-2 border border-sky-300/20 object-cover" data-alt="Portrait of a young professional user set against a dark, moody studio background, slightly out of focus, matching the Glacier Pro ethereal aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEFkKZ-SFx6JfBMTIZ5zi8vYol312SaBlla00mxYAjDHkF8gNKC40BcbeMjK5vQqPbcO2G3S5VrH8rvj82Td-ZlInWQVN6EP_qhlwuXIzE8j4p68JEHXdeJN7n2pQpgREZ__kiVdAn7msIKUxdeytGz2q0H7xx-gQUO3HZrSO3N3wn9bWHEuK3CHHS0TUbRPGfKQB7DcHEdwEtiWankpNHPezI8JBWcxasiyl97guBOO3Dpm_arp9cTQpnxO_Spr1CMUa5GWXJAzE"/>
+</div>
+</div>
+</header>
+<!-- Editor & Context Split -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Editor Area (Left 70%) -->
+<section class="flex-1 w-[70%] overflow-y-auto px-8 py-10 lg:px-16 lg:py-12 relative">
+<div class="max-w-3xl mx-auto space-y-6">
+<!-- Meta/Tags -->
+<div class="flex flex-wrap gap-2 items-center text-sm">
+<span class="text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">folder</span> Research</span>
+<span class="text-on-surface-variant px-2">•</span>
+<span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium backdrop-blur-md shadow-[0_0_10px_rgba(16,185,129,0.1)]">#systems-design</span>
+<span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium backdrop-blur-md shadow-[0_0_10px_rgba(16,185,129,0.1)]">#glassmorphism</span>
+</div>
+<!-- Title -->
+<input class="w-full bg-transparent border-none text-4xl lg:text-5xl font-bold text-on-surface placeholder:text-on-surface-variant/30 focus:ring-0 p-0 font-headline tracking-tight" placeholder="Note Title..." type="text" value="Architecting Ethereal UIs"/>
+<div class="text-xs text-on-surface-variant/60">Last edited just now</div>
+<!-- Content Body -->
+<div class="prose prose-invert max-w-none mt-8 prose-p:text-on-surface-variant prose-p:leading-relaxed prose-p:text-[15px] prose-headings:text-on-surface font-body space-y-6">
+<p>The concept of "Frozen Light" dictates that depth is perceived through layered, translucent surfaces rather than hard drop shadows. This approach creates an atmospheric, premium aesthetic that feels both futuristic and grounded.</p>
+<p>When implementing these patterns, it's crucial to balance visibility and legibility. The background canvas must remain dark enough (<code class="bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/30 text-primary">#0a0e1a</code>) to allow the primary luminous accents to shine through.</p>
+<blockquote class="border-l-2 border-primary/40 pl-4 italic text-on-surface/80 bg-gradient-to-r from-primary/5 to-transparent py-2 my-6">
+                            "Never use opaque solid backgrounds on floating elements. Keep borders subtle — luminous, not structural."
+                        </blockquote>
+<h3 class="text-xl font-semibold text-on-surface mt-8 mb-4">Core Structural Patterns</h3>
+<p>Elevation is simulated by increasing opacity and blur intensity simultaneously. Layer 1 utilizes a 60% opacity fill with a 16px blur radius. As elements move 'closer' to the user (Layer 2), opacity increases to 75% alongside a 24px blur.</p>
+<!-- Empty space for typing simulation -->
+<div class="min-h-[307px]">
+<p class="text-on-surface-variant/30 flex items-center gap-1 animate-pulse">
+<span class="w-0.5 h-5 bg-primary rounded-full"></span> Start typing...
+                            </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Context Bar (Right 30%) -->
+<aside class="hidden lg:flex w-[30%] min-w-[320px] max-w-[400px] bg-surface-container-low/30 border-l border-outline-variant/30 backdrop-blur-md p-6 flex-col overflow-y-auto">
+<h4 class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">bubble_chart</span>
+                    Context Engine
+                </h4>
+<div class="space-y-6">
+<!-- Related Notes Card -->
+<div class="bg-[rgba(15,21,36,0.6)] backdrop-blur-[16px] border border-emerald-500/20 rounded-xl p-4 shadow-[0_0_15px_rgba(16,185,129,0.05)] hover:shadow-[0_0_20px_rgba(16,185,129,0.1)] transition-all duration-300">
+<div class="flex items-center gap-2 mb-3 text-emerald-400">
+<span class="material-symbols-outlined text-[18px]">account_tree</span>
+<h5 class="font-medium text-sm">Related Concepts</h5>
+</div>
+<ul class="space-y-3">
+<li>
+<a class="block group" href="#">
+<h6 class="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">Translucency in Dark Mode UIs</h6>
+<p class="text-xs text-on-surface-variant line-clamp-1 mt-0.5">Exploring the balance between contrast and blur.</p>
+</a>
+</li>
+<li>
+<a class="block group" href="#">
+<h6 class="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">Design Tokens Architecture</h6>
+<p class="text-xs text-on-surface-variant line-clamp-1 mt-0.5">Structuring CSS variables for complex themes.</p>
+</a>
+</li>
+</ul>
+</div>
+<!-- Auto-suggested Links Card -->
+<div class="bg-[rgba(15,21,36,0.6)] backdrop-blur-[16px] border border-primary/10 rounded-xl p-4">
+<div class="flex items-center gap-2 mb-3 text-primary/80">
+<span class="material-symbols-outlined text-[18px]">link</span>
+<h5 class="font-medium text-sm">Auto-Links</h5>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="px-2.5 py-1 rounded bg-surface border border-outline-variant text-xs text-on-surface-variant hover:text-primary hover:border-primary/30 cursor-pointer transition-all">Glassmorphism</span>
+<span class="px-2.5 py-1 rounded bg-surface border border-outline-variant text-xs text-on-surface-variant hover:text-primary hover:border-primary/30 cursor-pointer transition-all">Elevation Patterns</span>
+<span class="px-2.5 py-1 rounded bg-surface border border-outline-variant text-xs text-on-surface-variant hover:text-primary hover:border-primary/30 cursor-pointer transition-all">Accessibility</span>
+</div>
+</div>
+<!-- Insight Card -->
+<div class="bg-gradient-to-br from-[#0f1524]/80 to-[#1a2438]/80 backdrop-blur-[24px] border border-tertiary-fixed-dim/20 rounded-xl p-4 relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-16 h-16 bg-tertiary-fixed-dim/10 rounded-full blur-xl"></div>
+<div class="flex items-center gap-2 mb-2 text-tertiary-fixed-dim">
+<span class="material-symbols-outlined text-[18px]">psychology</span>
+<h5 class="font-medium text-sm">AI Insight</h5>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">
+                            Consider linking this note to your recent entry on "Tailwind Container Queries" to complete the responsive implementation strategy.
+                        </p>
+<button class="mt-3 text-xs text-tertiary-fixed-dim hover:text-tertiary-fixed font-medium transition-colors">
+                            Create Link →
+                        </button>
+</div>
+</div>
+</aside>
+</div>
+</main>
+</body></html>

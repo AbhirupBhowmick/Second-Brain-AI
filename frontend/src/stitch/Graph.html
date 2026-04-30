@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Knowledge Map - Glacier Pro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#0f1524",
+                        "primary": "#7dd3fc",
+                        "on-primary-container": "#c8eaff",
+                        "outline": "#4a6070",
+                        "surface": "#0f1524",
+                        "on-tertiary-fixed-variant": "#4d2a73",
+                        "on-secondary": "#001f2e",
+                        "background": "#0a0e1a",
+                        "inverse-on-surface": "#0a0e1a",
+                        "on-secondary-fixed-variant": "#2a4a5e",
+                        "on-tertiary-container": "#e8d0ff",
+                        "on-primary": "#001f2e",
+                        "surface-container": "#141c2e",
+                        "on-background": "#e0e8f0",
+                        "primary-fixed-dim": "#7dd3fc",
+                        "outline-variant": "#2a3a48",
+                        "surface-container-low": "#111828",
+                        "secondary": "#88b4cc",
+                        "tertiary-fixed": "#e8d0ff",
+                        "on-primary-fixed-variant": "#004d73",
+                        "surface-container-high": "#1a2438",
+                        "error-container": "#3d1414",
+                        "on-tertiary-fixed": "#1a002e",
+                        "secondary-fixed": "#c0d8e8",
+                        "primary-fixed": "#c8eaff",
+                        "tertiary-fixed-dim": "#c8a0f0",
+                        "surface-container-lowest": "#0a0e1a",
+                        "secondary-container": "#1a3a4e",
+                        "surface-tint": "#7dd3fc",
+                        "on-error": "#1a0000",
+                        "inverse-primary": "#0a4c6e",
+                        "primary-container": "#0e4d6e",
+                        "tertiary": "#c8a0f0",
+                        "on-surface": "#e0e8f0",
+                        "on-primary-fixed": "#001f2e",
+                        "on-secondary-container": "#c0d8e8",
+                        "surface-variant": "#1a2438",
+                        "tertiary-container": "#3d2060",
+                        "secondary-fixed-dim": "#88b4cc",
+                        "on-secondary-fixed": "#0d1f2b",
+                        "surface-container-highest": "#202c42",
+                        "inverse-surface": "#e0e8f0",
+                        "surface-bright": "#1a2438",
+                        "on-tertiary": "#1a002e",
+                        "on-surface-variant": "#a0b4c4",
+                        "error": "#ff6b6b",
+                        "on-error-container": "#ffb3b3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(15, 21, 36, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(125, 211, 252, 0.1);
+        }
+        .glass-panel-elevated {
+            background: rgba(15, 21, 36, 0.75);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(125, 211, 252, 0.15);
+        }
+        .glow-effect {
+            box-shadow: 0 0 30px rgba(125, 211, 252, 0.05);
+        }
+        
+        /* Simulated Network Nodes */
+        .network-bg {
+            background-color: #0a0e1a;
+            background-image: radial-gradient(circle at 50% 50%, rgba(125, 211, 252, 0.05) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 20%, rgba(200, 160, 240, 0.05) 0%, transparent 40%);
+        }
+        .node {
+            position: absolute;
+            border-radius: 50%;
+            background-color: #7dd3fc;
+            box-shadow: 0 0 10px rgba(125, 211, 252, 0.5);
+        }
+        .node.tertiary {
+            background-color: #c8a0f0;
+            box-shadow: 0 0 10px rgba(200, 160, 240, 0.5);
+        }
+        .line {
+            position: absolute;
+            background-color: rgba(125, 211, 252, 0.2);
+            height: 1px;
+            transform-origin: left center;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body overflow-hidden h-screen w-screen flex antialiased">
+<!-- Desktop Side Navigation -->
+<aside class="hidden md:flex flex-col h-full fixed left-0 top-0 z-40 bg-[#0f1524]/75 backdrop-blur-2xl border-r border-sky-300/10 shadow-2xl ease-in-out duration-300 h-screen w-64">
+<div class="flex items-center gap-3 p-6 mb-4">
+<div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30 glow-effect">
+<span class="material-symbols-outlined text-primary" data-weight="fill" style="font-variation-settings: 'FILL' 1;">ac_unit</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-sky-300 tracking-wider">Glacier Pro</h1>
+<p class="text-xs text-on-surface-variant">Deep Focus Mode</p>
+</div>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full flex items-center justify-center gap-2 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg transition-all text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Project
+            </button>
+</div>
+<nav class="flex-1 px-3 space-y-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+                Dashboard
+            </a>
+<!-- Active State -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-sky-300/10 text-sky-300 border-r-2 border-sky-300 text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+                Knowledge Map
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+                Notes
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">smart_toy</span>
+                AI Assistant
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="p-4 border-t border-sky-300/10 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-[18px]">help</span>
+                Support
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-sky-100 hover:bg-white/5 transition-all text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+                Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 relative w-full h-full network-bg md:ml-64">
+<!-- Mobile Top Nav (Hidden on md+) -->
+<header class="md:hidden flex justify-between items-center px-6 py-3 w-full sticky top-0 z-50 bg-[#0a0e1a]/60 backdrop-blur-xl border-b border-sky-300/10 shadow-[0_0_30px_rgba(125,211,252,0.05)]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">ac_unit</span>
+<span class="text-xl font-semibold tracking-wider text-sky-300 font-inter antialiased tracking-tight">Glacier</span>
+</div>
+<div class="flex gap-4 items-center">
+<button class="text-slate-400 hover:bg-sky-300/10 transition-colors p-2 rounded-full active:scale-95 duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-sky-300/30" data-alt="A macro, high-contrast studio portrait of a young woman's face. The lighting is dramatic and cool-toned, echoing a high-tech glassmorphic UI aesthetic with subtle ice-blue and navy reflections. The background is completely black, isolating her sharp features. The mood is serious, premium, and slightly futuristic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjtqFldw_CzxLWCq3fDgUOxndeQZ7X3iluOagNM34C43Hrlyv8tWKgb-U6qR2LAguNtUwkY32nggC0jLhYeMWxRyfKkKGbXpj2euYfaqb1i3icIwybg8PKkK5S7UBMNUZbfFWD3mExl_rmthvA4KDtuIocvnga0PxTOpG4nXMhn4Pw3KR5wyEEJ6yWL8ivtA125OB8EgwqdHE1ZHktnhZ_9VO6HpiexzKQwlRdpm1VT1CT02l1UHCw6K46e9y_J-mAGs8myYnkpuk"/>
+</div>
+</header>
+<!-- Simulated Network Canvas -->
+<div aria-hidden="true" class="absolute inset-0 z-0 overflow-hidden">
+<!-- Central Node Cluster -->
+<div class="node w-8 h-8 left-1/2 top-1/2 -ml-4 -mt-4 z-10 flex items-center justify-center bg-primary/20 border-2 border-primary">
+<span class="material-symbols-outlined text-primary text-[16px]">hub</span>
+</div>
+<div class="node w-4 h-4 left-[40%] top-[30%]"></div>
+<div class="node w-3 h-3 left-[60%] top-[40%] tertiary"></div>
+<div class="node w-5 h-5 left-[30%] top-[60%]"></div>
+<div class="node w-2 h-2 left-[70%] top-[65%]"></div>
+<div class="node w-6 h-6 left-[45%] top-[70%] tertiary"></div>
+<div class="node w-3 h-3 left-[20%] top-[45%]"></div>
+<div class="node w-4 h-4 left-[80%] top-[35%] tertiary"></div>
+<!-- Lines -->
+<div class="line w-[150px]" style="left: 40%; top: 30%; transform: rotate(45deg);"></div>
+<div class="line w-[200px]" style="left: 60%; top: 40%; transform: rotate(-30deg);"></div>
+<div class="line w-[180px]" style="left: 30%; top: 60%; transform: rotate(-60deg);"></div>
+<div class="line w-[250px]" style="left: 45%; top: 70%; transform: rotate(-80deg);"></div>
+<div class="line w-[300px]" style="left: 20%; top: 45%; transform: rotate(15deg);"></div>
+</div>
+<!-- Floating Control Panel -->
+<div class="absolute right-6 top-6 bottom-6 w-80 z-20 flex flex-col gap-4 pointer-events-none md:top-6 md:bottom-6 md:right-8">
+<!-- Global Controls -->
+<div class="glass-panel-elevated rounded-xl p-5 glow-effect pointer-events-auto">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-on-surface font-semibold tracking-wide flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">tune</span>
+                        Graph Controls
+                    </h2>
+</div>
+<div class="space-y-6">
+<!-- Toggle -->
+<div class="flex items-center justify-between">
+<div>
+<span class="text-sm font-medium text-on-surface">Show Communities</span>
+<p class="text-xs text-on-surface-variant mt-0.5">Highlight modular structures</p>
+</div>
+<button class="w-11 h-6 bg-[#0f1524] rounded-full border border-primary/30 relative transition-colors focus:outline-none">
+<div class="absolute left-1 top-1 w-4 h-4 bg-primary rounded-full transition-transform translate-x-5 shadow-[0_0_10px_rgba(125,211,252,0.8)]"></div>
+</button>
+</div>
+<!-- Slider -->
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="text-sm font-medium text-on-surface">Clustering Resolution</span>
+<span class="text-xs text-primary font-mono bg-primary/10 px-1.5 py-0.5 rounded">0.85</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden border border-white/5">
+<div class="h-full bg-primary w-[85%] shadow-[0_0_10px_rgba(125,211,252,0.5)]"></div>
+</div>
+</div>
+<div class="pt-2">
+<button class="w-full py-2.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg transition-all text-sm font-medium flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(125,211,252,0.1)]">
+<span class="material-symbols-outlined text-[18px]">functions</span>
+                            Compute Node Importance
+                        </button>
+</div>
+</div>
+</div>
+<!-- Context Panel -->
+<div class="glass-panel rounded-xl p-5 flex-1 overflow-y-auto pointer-events-auto flex flex-col">
+<h3 class="text-sm font-medium text-on-surface-variant uppercase tracking-wider mb-4 border-b border-sky-300/10 pb-2">Selected Entity</h3>
+<div class="flex items-start gap-4 mb-4">
+<div class="w-12 h-12 rounded-lg bg-tertiary/10 border border-tertiary/30 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-tertiary text-2xl">memory</span>
+</div>
+<div>
+<h4 class="text-lg font-semibold text-on-surface leading-tight">Neural Substrates</h4>
+<span class="inline-block mt-1 text-[10px] font-mono text-tertiary bg-tertiary/10 px-2 py-0.5 rounded border border-tertiary/20">ID: N-8492</span>
+</div>
+</div>
+<p class="text-sm text-on-surface-variant mb-6 leading-relaxed">
+                    Primary processing hub for pattern recognition vectors. Exhibits high centrality in the current network configuration.
+                </p>
+<div class="grid grid-cols-2 gap-3 mt-auto">
+<div class="bg-surface-container-high/50 p-3 rounded-lg border border-white/5">
+<span class="text-xs text-on-surface-variant block mb-1">Degree</span>
+<span class="text-lg font-mono text-primary">24</span>
+</div>
+<div class="bg-surface-container-high/50 p-3 rounded-lg border border-white/5">
+<span class="text-xs text-on-surface-variant block mb-1">Betweenness</span>
+<span class="text-lg font-mono text-primary">0.92</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

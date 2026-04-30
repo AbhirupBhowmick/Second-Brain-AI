@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@layer utilities {
+  @keyframes neural-drift {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(50px, 30px) scale(1.1); }
+    66% { transform: translate(-20px, 50px) scale(0.9); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+
+  @keyframes neural-drift-slow {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-60px, -40px) scale(1.2); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+
+  .animate-neural-drift {
+    animation: neural-drift 25s ease-in-out infinite;
+  }
+
+  .animate-neural-drift-slow {
+    animation: neural-drift-slow 35s ease-in-out infinite;
+  }
+
+  .scroll-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scroll-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+:root {
+  --primary: #38bdf8;
+  --bg-dark: #05080f;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-dark);
+}
+
+/* Professional Focus States */
+*:focus {
+  outline: none !important;
+}
+
+input:focus, 
+textarea:focus, 
+button:focus-visible {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.1) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Custom Scrollbar for a premium feel */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.2);
+}
