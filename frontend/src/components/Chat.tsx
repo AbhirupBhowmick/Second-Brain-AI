@@ -4,8 +4,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import axios from 'axios';
 
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  time: string;
+}
+
 export const Chat = () => {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: 'Neural Nexus initialized. I am your cognitive co-processor. How shall we expand your collective intelligence today?', time: 'System Ready' }
   ]);
   const [input, setInput] = useState('');

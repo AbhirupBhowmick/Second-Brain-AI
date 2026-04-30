@@ -3,14 +3,33 @@ import Layout from './Layout';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+interface Note {
+  id: string | number;
+  title?: string;
+  content: string;
+  createdAt: string;
+  tags?: string[];
+}
+
+interface Project {
+  id: string | number;
+  name: string;
+}
+
+interface DashboardStats {
+  totalNotes: string;
+  totalConnections: string;
+  storageUsed: string;
+}
+
 export const Dashboard = () => {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     totalNotes: '...',
     totalConnections: '...',
     storageUsed: '...'
   });
-  const [recentNotes, setRecentNotes] = useState<any[]>([]);
-  const [activeProjects, setActiveProjects] = useState<any[]>([]);
+  const [recentNotes, setRecentNotes] = useState<Note[]>([]);
+  const [activeProjects, setActiveProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {

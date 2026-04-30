@@ -3,10 +3,29 @@ import Layout from './Layout';
 import ForceGraph2D from 'react-force-graph-2d';
 import axios from 'axios';
 
+interface Node {
+  id: string | number;
+  name?: string;
+  content?: string;
+  x?: number;
+  y?: number;
+  val?: number;
+}
+
+interface Link {
+  source: string | number;
+  target: string | number;
+}
+
+interface GraphData {
+  nodes: Node[];
+  links: Link[];
+}
+
 export const Graph = () => {
-  const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedNode, setSelectedNode] = useState(null);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
   const fetchGraphData = async () => {
     setIsLoading(true);
@@ -39,7 +58,7 @@ export const Graph = () => {
             <ForceGraph2D
               graphData={graphData}
               nodeColor={() => "#10b981"}
-              nodeLabel={(node) => `
+              nodeLabel={(node: any) => `
                 <div class="glass-panel p-4 border border-white/10 bg-[#0a0f1a]/95 rounded-2xl shadow-2xl min-w-[200px] max-w-[300px]">
                   <div class="flex items-center gap-2 mb-2">
                     <span class="material-symbols-outlined text-primary text-sm">psychology</span>
@@ -56,21 +75,21 @@ export const Graph = () => {
               linkDirectionalParticleSpeed={0.002}
               linkDirectionalParticleWidth={1.5}
               backgroundColor="#05080f"
-              onNodeClick={(node) => setSelectedNode(node)}
-              nodeCanvasObject={(node, ctx, globalScale) => {
-                const label = node.name;
+              onNodeClick={(node: any) => setSelectedNode(node)}
+              nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+                const label = node.name || 'Node';
                 const fontSize = 12/globalScale;
                 ctx.font = `${fontSize}px Inter`;
                 
                 // Outer Glow
                 ctx.beginPath();
-                ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI, false);
+                ctx.arc(node.x || 0, node.y || 0, 6, 0, 2 * Math.PI, false);
                 ctx.fillStyle = "rgba(16, 185, 129, 0.15)";
                 ctx.fill();
 
                 // Core Glow
                 ctx.beginPath();
-                ctx.arc(node.x, node.y, 4, 0, 2 * Math.PI, false);
+                ctx.arc(node.x || 0, node.y || 0, 4, 0, 2 * Math.PI, false);
                 ctx.fillStyle = "#10b981";
                 ctx.shadowBlur = 15;
                 ctx.shadowColor = "#10b981";
@@ -78,7 +97,7 @@ export const Graph = () => {
                 
                 // Center Core
                 ctx.beginPath();
-                ctx.arc(node.x, node.y, 2.5, 0, 2 * Math.PI, false);
+                ctx.arc(node.x || 0, node.y || 0, 2.5, 0, 2 * Math.PI, false);
                 ctx.fillStyle = "#fff";
                 ctx.fill();
                 ctx.shadowBlur = 0;
