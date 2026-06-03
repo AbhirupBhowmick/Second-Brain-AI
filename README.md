@@ -48,7 +48,7 @@ graph TD
         A --> D[2D Force-Directed Map]
         A --> E[Gemini AI RAG Chat]
         B & C & D & E --> F[Auth Context / Protected Routes]
-        Style Client: Tailwind CSS v4 & GSAP
+        T["Styling: Tailwind CSS v4 + GSAP"]
     end
 
     subgraph Backend [Spring Boot API Service]
