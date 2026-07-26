@@ -17,7 +17,7 @@ const Sidebar = () => {
   };
 
   const navItems = [
-    { name: 'Neural Dashboard', icon: 'grid_view', path: '/' },
+    { name: 'Neural Dashboard', icon: 'grid_view', path: '/dashboard' },
     { name: 'Knowledge Map', icon: 'hub', path: '/map' },
     { name: 'Cerebral Notes', icon: 'psychology', path: '/notes' },
     { name: 'AI Assistant', icon: 'smart_toy', path: '/chat' },

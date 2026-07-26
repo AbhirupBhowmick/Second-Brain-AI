@@ -121,7 +121,7 @@ export const Auth = () => {
           token: tokenResponse.access_token
         });
         login(res.data);
-        navigate('/');
+        navigate('/dashboard');
       } catch (err: any) {
         setError('Google authentication failed. Please try again.');
       } finally {
@@ -143,7 +143,7 @@ export const Auth = () => {
       });
       if (isLogin) {
         login(response.data);
-        navigate('/');
+        navigate('/dashboard');
       } else {
         setIsLogin(true);
         setError('Account created! Please sign in.');
