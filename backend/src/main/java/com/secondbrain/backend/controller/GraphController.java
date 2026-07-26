@@ -3,6 +3,8 @@ package com.secondbrain.backend.controller;
 import com.secondbrain.backend.model.Note;
 import com.secondbrain.backend.model.RelatesTo;
 import com.secondbrain.backend.repository.NoteRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,12 +15,20 @@ import java.util.*;
 @CrossOrigin(origins = "*")
 public class GraphController {
 
+    private static final Logger logger = LoggerFactory.getLogger(GraphController.class);
+
     @Autowired
     private NoteRepository noteRepository;
 
     @GetMapping
     public Map<String, Object> getGraphData() {
-        List<Note> notes = noteRepository.findAll();
+        List<Note> notes = new ArrayList<>();
+        try {
+            notes = noteRepository.findAll();
+        } catch (Exception e) {
+            logger.warn("Neo4j offline for getGraphData ({}), returning empty node graph", e.getMessage());
+        }
+
         List<Map<String, Object>> nodesList = new ArrayList<>();
         List<Map<String, Object>> linksList = new ArrayList<>();
 

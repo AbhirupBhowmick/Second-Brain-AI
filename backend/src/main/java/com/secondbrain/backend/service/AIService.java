@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.secondbrain.backend.model.Note;
 import com.secondbrain.backend.repository.NoteRepository;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +36,16 @@ public class AIService {
     private NoteRepository noteRepository;
 
     public String getChatResponse(String prompt) {
+        List<Note> recentNotes = new ArrayList<>();
+        try {
+            recentNotes = noteRepository.findRecentNotes();
+        } catch (Exception e) {
+            logger.warn("Neo4j offline for findRecentNotes ({}), continuing with empty note context", e.getMessage());
+        }
+
         if (geminiApiKey == null || geminiApiKey.trim().isEmpty()) {
             logger.warn("GEMINI_API_KEY is not configured in environment or properties.");
-            return generateLocalFallback(prompt, "Gemini API Key is not configured. Please set GEMINI_API_KEY in your environment variables or application.properties.");
+            return generateLocalFallback(prompt, recentNotes, "Gemini API Key is not configured. Please set GEMINI_API_KEY in your environment variables or application.properties.");
         }
 
         String maskedKey = geminiApiKey.length() > 8 
@@ -46,7 +54,6 @@ public class AIService {
 
         logger.info("Initiating Gemini AI request with key: {} and model: {}", maskedKey, geminiModel);
 
-        List<Note> recentNotes = noteRepository.findRecentNotes();
         StringBuilder contextBuilder = new StringBuilder(
             "System Context: You are the 'Second Brain AI' Assistant. Below is a subset of the user's personal knowledge substrate.\n\nKNOWLEDGE SUBSTRATE:\n"
         );
@@ -68,13 +75,12 @@ public class AIService {
                 }
             } catch (HttpClientErrorException.Forbidden | HttpClientErrorException.Unauthorized e) {
                 logger.error("Gemini Authentication Error (Attempt {}): {}", attempt, e.getMessage());
-                return generateLocalFallback(prompt, "Invalid Gemini API Key or permission denied. Please verify your GEMINI_API_KEY in Google AI Studio.");
+                return generateLocalFallback(prompt, recentNotes, "Invalid Gemini API Key or permission denied. Please verify your GEMINI_API_KEY in Google AI Studio.");
             } catch (HttpClientErrorException.TooManyRequests e) {
                 logger.error("Gemini Rate Limit Exceeded (Attempt {}): {}", attempt, e.getMessage());
-                return generateLocalFallback(prompt, "Gemini API quota rate limit exceeded. Please try again shortly.");
+                return generateLocalFallback(prompt, recentNotes, "Gemini API quota rate limit exceeded. Please try again shortly.");
             } catch (HttpClientErrorException.NotFound e) {
                 logger.error("Gemini Model Not Found (Attempt {}): {}", attempt, e.getMessage());
-                // Fallback to gemini-1.5-flash if custom model failed
                 if (!"gemini-1.5-flash".equals(geminiModel)) {
                     logger.info("Falling back to standard gemini-1.5-flash model...");
                     try {
@@ -83,19 +89,19 @@ public class AIService {
                         logger.error("Fallback model execution failed: {}", ex.getMessage());
                     }
                 }
-                return generateLocalFallback(prompt, "Gemini model ('" + geminiModel + "') unavailable.");
+                return generateLocalFallback(prompt, recentNotes, "Gemini model ('" + geminiModel + "') unavailable.");
             } catch (ResourceAccessException | HttpServerErrorException e) {
                 logger.warn("Transient error on attempt {}/2: {}", attempt, e.getMessage());
                 if (attempt == 2) {
-                    return generateLocalFallback(prompt, "Network timeout connecting to Gemini API.");
+                    return generateLocalFallback(prompt, recentNotes, "Network timeout connecting to Gemini API.");
                 }
             } catch (Exception e) {
                 logger.error("Unexpected error calling Gemini API: {}", e.getMessage(), e);
-                return generateLocalFallback(prompt, "Unexpected server exception: " + e.getMessage());
+                return generateLocalFallback(prompt, recentNotes, "Unexpected server exception: " + e.getMessage());
             }
         }
 
-        return generateLocalFallback(prompt, "Gemini API unavailable after retry.");
+        return generateLocalFallback(prompt, recentNotes, "Gemini API unavailable after retry.");
     }
 
     private String executeGeminiRequest(String promptText, String modelName) {
@@ -140,14 +146,24 @@ public class AIService {
         return null;
     }
 
-    private String generateLocalFallback(String prompt, String notice) {
+    private String generateLocalFallback(String prompt, List<Note> recentNotes, String notice) {
         logger.info("Generating grounded context response fallback. Notice: {}", notice);
-        List<Note> allNotes = noteRepository.findAll();
-        if (allNotes != null && !allNotes.isEmpty()) {
-            Note topNote = allNotes.get(0);
+        if (recentNotes != null && !recentNotes.isEmpty()) {
+            Note topNote = recentNotes.get(0);
             return "[Substrate Synthesis]: " + notice + "\n\nBased on your stored note ('" + topNote.getTitle() + "'):\n\"" 
                 + (topNote.getContent() != null ? topNote.getContent().substring(0, Math.min(220, topNote.getContent().length())) : "") 
                 + "...\"";
+        }
+        try {
+            List<Note> allNotes = noteRepository.findAll();
+            if (allNotes != null && !allNotes.isEmpty()) {
+                Note topNote = allNotes.get(0);
+                return "[Substrate Synthesis]: " + notice + "\n\nBased on your stored note ('" + topNote.getTitle() + "'):\n\"" 
+                    + (topNote.getContent() != null ? topNote.getContent().substring(0, Math.min(220, topNote.getContent().length())) : "") 
+                    + "...\"";
+            }
+        } catch (Exception e) {
+            logger.warn("Neo4j offline in generateLocalFallback ({})", e.getMessage());
         }
         return "[Substrate Synthesis]: " + notice + "\n\nYour Second Brain AI currently contains 0 indexed note nodes. Add notes to allow AI knowledge graph reasoning.";
     }
