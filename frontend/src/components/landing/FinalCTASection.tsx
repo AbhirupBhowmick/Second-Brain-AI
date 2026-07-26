@@ -15,7 +15,7 @@ const FinalCTASection: React.FC = () => {
   };
 
   return (
-    <section className="py-28 lg:py-36 px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/[0.06] relative overflow-hidden">
+    <section className="py-20 lg:py-28 px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/[0.06] relative overflow-hidden">
       {/* Background Soft Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 

@@ -33,13 +33,13 @@ const HeroSection: React.FC = () => {
   };
 
   return (
-    <section ref={heroRef} className="relative pt-32 pb-20 lg:pt-44 lg:pb-32 px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
+    <section ref={heroRef} className="relative pt-28 pb-16 lg:pt-36 lg:pb-24 px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
       {/* Background soft ambient highlight */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-indigo-900/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
         {/* Left Content Column */}
-        <div className="lg:col-span-6 space-y-8 text-left">
+        <div className="lg:col-span-6 space-y-6 text-left">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-white/10 text-xs font-medium text-zinc-300 backdrop-blur-md">
             <span className="flex h-2 w-2 rounded-full bg-indigo-500" />

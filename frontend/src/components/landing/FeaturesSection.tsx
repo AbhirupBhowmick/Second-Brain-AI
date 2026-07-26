@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 
 interface FeatureItem {
-  number: string;
   title: string;
   description: string;
   tag: string;
@@ -15,23 +14,21 @@ const FeaturesSection: React.FC = () => {
 
   const features: FeatureItem[] = [
     {
-      number: '01',
       title: 'Knowledge Graph',
-      description: 'Visualise relationships between ideas.',
+      description: 'Visualise relationships between ideas as a living, explorable network.',
       tag: 'Neo4j Engine',
       icon: (
         <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <circle cx="6" cy="6" r="3" strokeWidth="1.5" />
-          <circle cx="18" cy="6" r="3" strokeWidth="1.5" />
-          <circle cx="12" cy="18" r="3" strokeWidth="1.5" />
-          <path d="M8.5 7.5L15.5 7.5M7.5 8.5L10.5 15.5M16.5 8.5L13.5 15.5" strokeWidth="1.5" />
+          <circle cx="6" cy="6" r="2.5" strokeWidth="1.5" />
+          <circle cx="18" cy="6" r="2.5" strokeWidth="1.5" />
+          <circle cx="12" cy="18" r="2.5" strokeWidth="1.5" />
+          <path d="M8.2 7.2L15.8 7.2M7.5 8.2L10.5 16M16.5 8.2L13.5 16" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       ),
     },
     {
-      number: '02',
       title: 'Semantic Memory',
-      description: 'Everything stays connected forever.',
+      description: 'Every idea is indexed by meaning, not just words. Nothing gets lost.',
       tag: 'Vector Storage',
       icon: (
         <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -40,9 +37,8 @@ const FeaturesSection: React.FC = () => {
       ),
     },
     {
-      number: '03',
       title: 'AI Workspace',
-      description: 'Chat, organise, discover.',
+      description: 'Chat with your knowledge base. Organise, synthesise, and discover insights.',
       tag: 'Cognitive Engine',
       icon: (
         <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -51,9 +47,8 @@ const FeaturesSection: React.FC = () => {
       ),
     },
     {
-      number: '04',
       title: 'Research Studio',
-      description: 'Capture everything in one place.',
+      description: 'Capture notes, links, papers, and highlights in one unified space.',
       tag: 'Multi-Source Capture',
       icon: (
         <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -62,9 +57,8 @@ const FeaturesSection: React.FC = () => {
       ),
     },
     {
-      number: '05',
       title: 'Smart Search',
-      description: 'Search concepts instead of keywords.',
+      description: 'Find ideas by concept and intent — not by guessing exact keywords.',
       tag: 'Neural Retrieval',
       icon: (
         <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -73,9 +67,8 @@ const FeaturesSection: React.FC = () => {
       ),
     },
     {
-      number: '06',
       title: 'Private by Design',
-      description: 'Your knowledge remains yours.',
+      description: 'Local-first architecture. Your knowledge never leaves without permission.',
       tag: 'Local & Encrypted',
       icon: (
         <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -92,81 +85,84 @@ const FeaturesSection: React.FC = () => {
           if (entry.isIntersecting && cardsRef.current) {
             gsap.from(cardsRef.current.children, {
               opacity: 0,
-              y: 30,
-              duration: 0.7,
-              stagger: 0.1,
+              y: 24,
+              duration: 0.6,
+              stagger: 0.08,
               ease: 'power2.out',
             });
             observer.disconnect();
           }
         });
       },
-      { threshold: 0.15 }
+      { threshold: 0.12 }
     );
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
+    if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
 
   return (
-    <section id="features" ref={sectionRef} className="py-24 lg:py-32 px-6 lg:px-8 max-w-7xl mx-auto">
+    <section id="features" ref={sectionRef} className="py-20 lg:py-28 px-6 lg:px-8 max-w-7xl mx-auto">
       {/* Section Header */}
-      <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-xs font-mono font-medium text-indigo-400">
+      <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-xs font-mono font-medium text-indigo-400 mb-4">
           CORE CAPABILITIES
         </div>
-        <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white">
+        <h2 className="font-display text-3xl sm:text-4xl lg:text-[2.6rem] font-bold tracking-tight text-white mb-3">
           Designed for high-velocity thinkers.
         </h2>
-        <p className="text-base sm:text-lg text-zinc-400 font-normal leading-relaxed">
+        <p className="text-base text-zinc-400 font-normal leading-relaxed">
           Second Brain AI bridges raw human intuition with structured computational retrieval.
         </p>
       </div>
 
-      {/* Feature Cards Grid */}
-      <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Feature Cards Grid — strict 3-col, equal height via grid-rows-subgrid */}
+      <div
+        ref={cardsRef}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+        style={{ gridAutoRows: '1fr' }}
+      >
         {features.map((item, idx) => (
           <div
             key={idx}
-            className="glass-card p-8 rounded-2xl relative flex flex-col justify-between group cursor-pointer"
+            className="group relative flex flex-col rounded-xl border border-white/[0.07] bg-zinc-900/50 p-6 cursor-pointer
+              transition-all duration-300 ease-out
+              hover:-translate-y-1 hover:border-indigo-500/30 hover:bg-zinc-900/80 hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.6)]"
           >
-            <div>
-              {/* Card Top Info */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center group-hover:border-indigo-500/40 group-hover:bg-indigo-950/20 transition-colors">
-                  {item.icon}
-                </div>
-                <span className="text-xs font-mono text-zinc-500 font-medium tracking-wider">
-                  {item.number}
-                </span>
+            {/* Icon Container */}
+            <div
+              className="mb-4 w-11 h-11 rounded-xl flex items-center justify-center shrink-0
+                bg-zinc-800/80 border border-white/[0.07]
+                group-hover:bg-indigo-950/50 group-hover:border-indigo-500/30
+                transition-all duration-300"
+            >
+              <div className="transition-transform duration-300 group-hover:scale-110">
+                {item.icon}
               </div>
-
-              {/* Title */}
-              <h3 className="font-display text-xl font-semibold text-zinc-100 group-hover:text-white transition-colors mb-2">
-                {item.title}
-              </h3>
-
-              {/* Description */}
-              <p className="text-sm text-zinc-400 leading-relaxed font-normal">
-                {item.description}
-              </p>
             </div>
 
-            {/* Bottom Tag */}
-            <div className="pt-6 mt-6 border-t border-white/[0.06] flex items-center justify-between">
-              <span className="text-xs font-mono text-zinc-500 group-hover:text-indigo-400 transition-colors">
+            {/* Title */}
+            <h3 className="font-display text-base font-semibold text-zinc-100 group-hover:text-white transition-colors mb-1.5">
+              {item.title}
+            </h3>
+
+            {/* Description */}
+            <p className="text-sm text-zinc-400 leading-relaxed font-normal flex-1">
+              {item.description}
+            </p>
+
+            {/* Divider + Footer Tag — pushed to bottom via mt-auto */}
+            <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center justify-between">
+              <span className="text-[11px] font-mono font-medium text-zinc-500 group-hover:text-indigo-400 transition-colors tracking-wide">
                 {item.tag}
               </span>
               <svg
-                className="w-4 h-4 text-zinc-600 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all"
+                className="w-3.5 h-3.5 text-zinc-600 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all duration-200"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
               </svg>
             </div>
           </div>

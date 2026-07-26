@@ -20,7 +20,7 @@ const ProductPreviewSection: React.FC = () => {
   }, [tabs.length]);
 
   return (
-    <section id="live-demo" className="py-24 lg:py-32 px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/[0.06]">
+    <section id="live-demo" className="py-20 lg:py-28 px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/[0.06]">
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto space-y-4 mb-14">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-xs font-mono font-medium text-indigo-400">
