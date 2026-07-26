@@ -1,6 +1,7 @@
 package com.secondbrain.backend.controller;
 
 import com.secondbrain.backend.repository.NoteRepository;
+import com.secondbrain.backend.service.AIService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ public class HealthController {
     @Autowired
     private NoteRepository noteRepository;
 
+    @Autowired
+    private AIService aiService;
+
     @GetMapping
     public ResponseEntity<Map<String, Object>> getSystemHealth() {
         Map<String, Object> health = new HashMap<>();
@@ -59,6 +63,7 @@ public class HealthController {
         geminiStatus.put("status", apiKeyPresent ? "CONFIGURED" : "NOT_CONFIGURED");
         geminiStatus.put("apiKeyLoaded", apiKeyPresent);
         geminiStatus.put("model", geminiModel);
+        geminiStatus.put("lastSuccessfulAiRequestTime", aiService.getLastSuccessfulAiRequestTime());
         if (!apiKeyPresent) {
             geminiStatus.put("message", "Set GEMINI_API_KEY environment variable to enable Gemini AI synthesis");
         }

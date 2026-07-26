@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.secondbrain.backend.model.Note;
 import com.secondbrain.backend.repository.NoteRepository;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,11 +30,17 @@ public class AIService {
     @Value("${gemini.api.key:}")
     private String geminiApiKey;
 
-    @Value("${gemini.model:gemini-1.5-flash}")
+    @Value("${gemini.model:gemini-2.0-flash}")
     private String geminiModel;
 
     @Autowired
     private NoteRepository noteRepository;
+
+    private static String lastSuccessfulAiRequestTime = null;
+
+    public String getLastSuccessfulAiRequestTime() {
+        return lastSuccessfulAiRequestTime;
+    }
 
     public String getChatResponse(String prompt) {
         List<Note> recentNotes = new ArrayList<>();
@@ -72,25 +79,26 @@ public class AIService {
             try {
                 String result = executeGeminiRequest(finalPrompt, geminiModel);
                 if (result != null && !result.trim().isEmpty()) {
+                    lastSuccessfulAiRequestTime = Instant.now().toString();
                     return "[Gemini AI]\n\n" + result;
                 }
-            } catch (HttpClientErrorException.Forbidden | HttpClientErrorException.Unauthorized e) {
-                logger.error("Gemini Authentication Error (Attempt {}): {}", attempt, e.getMessage());
-                return generateLocalFallback(prompt, recentNotes, dbOnline, "[System Notice]: Invalid Gemini API Key or permission denied in Google AI Studio.");
-            } catch (HttpClientErrorException.TooManyRequests e) {
-                logger.error("Gemini Rate Limit Exceeded (Attempt {}): {}", attempt, e.getMessage());
-                return generateLocalFallback(prompt, recentNotes, dbOnline, "[System Notice]: Gemini API rate limit exceeded. Please wait a moment.");
-            } catch (HttpClientErrorException.NotFound e) {
-                logger.error("Gemini Model Not Found (Attempt {}): {}", attempt, e.getMessage());
-                if (!"gemini-1.5-flash".equals(geminiModel)) {
+            } catch (HttpClientErrorException e) {
+                logger.error("Gemini API Error (Status {}): {}", e.getStatusCode(), e.getResponseBodyAsString());
+                String responseBody = e.getResponseBodyAsString();
+                String detailedMsg = e.getStatusText();
+                if (responseBody != null && responseBody.contains("\"message\":")) {
                     try {
-                        String fallbackResult = executeGeminiRequest(finalPrompt, "gemini-1.5-flash");
-                        if (fallbackResult != null) return "[Gemini AI]\n\n" + fallbackResult;
+                        int idx = responseBody.indexOf("\"message\":");
+                        int start = responseBody.indexOf("\"", idx + 10) + 1;
+                        int end = responseBody.indexOf("\"", start);
+                        if (start > 0 && end > start) {
+                            detailedMsg = responseBody.substring(start, end).replace("\\n", " ");
+                        }
                     } catch (Exception ex) {
-                        logger.error("Model fallback failed: {}", ex.getMessage());
+                        detailedMsg = e.getResponseBodyAsString();
                     }
                 }
-                return generateLocalFallback(prompt, recentNotes, dbOnline, "[System Notice]: Gemini model ('" + geminiModel + "') is unavailable.");
+                return generateLocalFallback(prompt, recentNotes, dbOnline, "[System Notice]: Gemini API Error (" + e.getStatusCode().value() + "): " + detailedMsg);
             } catch (ResourceAccessException | HttpServerErrorException e) {
                 logger.warn("Transient error on attempt {}/2: {}", attempt, e.getMessage());
                 if (attempt == 2) {

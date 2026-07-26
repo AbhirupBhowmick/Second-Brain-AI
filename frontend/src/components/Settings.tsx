@@ -16,6 +16,7 @@ interface SystemHealthData {
     status: string;
     apiKeyLoaded: boolean;
     model: string;
+    lastSuccessfulAiRequestTime?: string | null;
     message?: string;
   };
 }
@@ -67,7 +68,7 @@ export const Settings = () => {
               Settings & Infrastructure
             </h2>
             <p className="text-xs text-zinc-400 font-normal mt-1">
-              System health monitoring, AI API keys, and workspace management.
+              System health monitoring, AI API key status, and workspace configuration.
             </p>
           </header>
 
@@ -139,7 +140,7 @@ export const Settings = () => {
                 {/* Gemini AI Status */}
                 <div className="p-4 rounded-xl bg-zinc-950/80 border border-white/[0.06] space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-300">Gemini AI</span>
+                    <span className="text-xs font-semibold text-zinc-300">Gemini AI Engine</span>
                     {healthData?.gemini?.apiKeyLoaded ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
                         ✓ CONFIGURED
@@ -150,9 +151,11 @@ export const Settings = () => {
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-zinc-500 font-mono">Model: {healthData?.gemini?.model || 'gemini-1.5-flash'}</p>
+                  <p className="text-[10px] text-zinc-500 font-mono">Model: {healthData?.gemini?.model || 'gemini-2.0-flash'}</p>
                   <p className="text-[10px] text-zinc-500 font-mono">
-                    {healthData?.gemini?.apiKeyLoaded ? 'API Key Loaded' : 'GEMINI_API_KEY Missing'}
+                    {healthData?.gemini?.lastSuccessfulAiRequestTime
+                      ? `Last Request: ${new Date(healthData.gemini.lastSuccessfulAiRequestTime).toLocaleTimeString()}`
+                      : 'API Key Loaded'}
                   </p>
                 </div>
               </div>
@@ -174,16 +177,16 @@ export const Settings = () => {
               <div>
                 <h3 className="text-sm font-bold text-white">Gemini API Environment Configuration</h3>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Configure your Gemini API key in environment variables or <code className="text-indigo-300 font-mono">application.properties</code>.
+                  Production Gemini API key loaded securely via environment variables.
                 </p>
               </div>
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-950 border border-white/[0.08] text-xs font-mono text-zinc-300 space-y-2">
-              <p className="text-zinc-500"># Set environment variable in your shell or .env file:</p>
-              <p className="text-indigo-300">export GEMINI_API_KEY="AIzaSyYourSecretGeminiKeyHere"</p>
-              <p className="text-zinc-500 pt-1"># Standard Model Endpoint:</p>
-              <p className="text-emerald-400">https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash</p>
+              <p className="text-zinc-500"># Environment Key Injection:</p>
+              <p className="text-indigo-300">GEMINI_API_KEY=•••••••• (Loaded from Environment)</p>
+              <p className="text-zinc-500 pt-1"># Official REST Endpoint:</p>
+              <p className="text-emerald-400">https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash</p>
             </div>
           </section>
 
