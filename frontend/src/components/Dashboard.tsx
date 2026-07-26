@@ -74,7 +74,11 @@ export const Dashboard: React.FC = () => {
         setAiError('Unable to generate AI response. Please try again.');
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.response?.data?.reply || err.message || 'AI service request failed. Verify backend API connection.';
+      const msg = err.response?.data?.message || 
+        (err.response?.status === 401 ? 'Authentication failure (401): Invalid or missing Gemini API key. Please verify your GEMINI_API_KEY environment variable.' : null) ||
+        err.response?.data?.reply || 
+        err.message || 
+        'AI service request failed. Verify backend API connection.';
       setAiError(msg);
     } finally {
       setAiLoading(false);

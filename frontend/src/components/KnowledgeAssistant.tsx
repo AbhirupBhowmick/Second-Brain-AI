@@ -150,7 +150,11 @@ export const KnowledgeAssistant: React.FC = () => {
 
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || err.response?.data?.reply || err.message || 'AI Service unavailable. Please verify API configuration.';
+      const errorMsg = err.response?.data?.message || 
+        (err.response?.status === 401 ? 'Authentication failure (401): Invalid or missing Gemini API key. Please verify your GEMINI_API_KEY environment variable.' : null) ||
+        err.response?.data?.reply || 
+        err.message || 
+        'AI Service unavailable. Please verify API configuration.';
       setMessages((prev) => [
         ...prev,
         {

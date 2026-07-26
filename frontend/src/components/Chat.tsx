@@ -68,7 +68,11 @@ export const Chat: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Chat error:', err);
-      const serverMsg = err.response?.data?.message || err.response?.data?.reply || err.message || 'AI Service unavailable. Verify API configuration or try again.';
+      const serverMsg = err.response?.data?.message || 
+        (err.response?.status === 401 ? 'Authentication failure (401): Invalid or missing Gemini API key. Please verify your GEMINI_API_KEY environment variable.' : null) ||
+        err.response?.data?.reply || 
+        err.message || 
+        'AI Service unavailable. Verify API configuration or try again.';
       setError(serverMsg);
     } finally {
       setLoading(false);
