@@ -7,7 +7,7 @@ const SocialProofSection: React.FC = () => {
     { name: 'Neo4j', label: 'Neo4j Graph', color: '#018BFF' },
     { name: 'Tailwind CSS', label: 'Tailwind CSS', color: '#38BDF8' },
     { name: 'GSAP', label: 'GSAP Motion', color: '#88CE02' },
-    { name: 'Google OAuth', label: 'Google OAuth 2.0', color: '#EA4335' },
+    { name: 'JWT Auth', label: 'JWT Security', color: '#A855F7' },
   ];
 
   return (

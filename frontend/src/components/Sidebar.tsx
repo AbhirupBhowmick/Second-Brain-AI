@@ -6,7 +6,7 @@ import { useModal } from '../context/ModalContext';
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, isGuest, logout } = useAuth();
   const { openModal } = useModal();
   const [showHelp, setShowHelp] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -100,7 +100,7 @@ const Sidebar = () => {
         </ul>
       </div>
 
-      <div className="mt-auto p-6 space-y-6">
+      <div className="mt-auto p-6 space-y-4">
         <div className="p-4 rounded-3xl bg-gradient-to-br from-white/[0.02] to-transparent border border-white/[0.05] relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-3xl -mr-12 -mt-12 group-hover:bg-primary/10 transition-colors"></div>
           <p className="text-xs text-slate-400 mb-3 relative z-10">Neural Capacity</p>
@@ -112,25 +112,39 @@ const Sidebar = () => {
 
         <button 
           onClick={openModal}
-          className="w-full flex items-center justify-center gap-2 py-4 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-2xl transition-all font-bold text-sm shadow-lg active:scale-95"
+          className="w-full flex items-center justify-center gap-2 py-3.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-2xl transition-all font-bold text-sm shadow-lg active:scale-95 cursor-pointer"
         >
           <span className="material-symbols-outlined text-lg">add</span>
           New Project
         </button>
 
-        <div className="flex items-center justify-between px-2 pt-2 border-t border-white/[0.05]">
+        {/* User profile section */}
+        <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
+          <div className="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center font-bold text-xs text-indigo-300 shrink-0">
+            {user?.avatar || (user?.name ? user.name.slice(0, 2).toUpperCase() : 'GU')}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs font-semibold text-white truncate">{user?.name || 'Guest User'}</p>
+            </div>
+            <p className="text-[10px] text-slate-400 truncate">{user?.email || 'guest@secondbrain.ai'}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between px-2 pt-1 border-t border-white/[0.05]">
           <Link to="/settings" className={`p-2 transition-colors ${location.pathname === '/settings' ? 'text-primary bg-primary/10 rounded-xl' : 'text-slate-500 hover:text-white'}`}>
             <span className="material-symbols-outlined text-[20px]">settings</span>
           </Link>
           <button 
             onClick={() => setShowHelp(true)}
-            className="p-2 text-slate-500 hover:text-white transition-colors"
+            className="p-2 text-slate-500 hover:text-white transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">help</span>
           </button>
           <button 
             onClick={handleLogout}
-            className="p-2 text-slate-500 hover:text-red-400 transition-colors"
+            className="p-2 text-slate-500 hover:text-red-400 transition-colors cursor-pointer"
+            title="Sign Out"
           >
             <span className="material-symbols-outlined text-[20px]">logout</span>
           </button>

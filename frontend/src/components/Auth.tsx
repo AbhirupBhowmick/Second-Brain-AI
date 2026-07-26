@@ -2,16 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useGoogleLogin } from '@react-oauth/google';
 import gsap from 'gsap';
 import AuthVisualization from './auth/AuthVisualization';
 import LoginForm from './auth/LoginForm';
 import SignupForm from './auth/SignupForm';
-// Environment variables
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
-if (!GOOGLE_CLIENT_ID) { console.error('Google Client ID not set in VITE_GOOGLE_CLIENT_ID'); }
+
 const API_URL = import.meta.env.VITE_API_URL || "";
 const baseUrl = API_URL.replace(/\/+$/, "");
+
 // ─── Subtle background: tiny animated dots on dark graphite ───────────────────
 const AuthBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -74,7 +72,7 @@ const AuthBackground: React.FC = () => {
 
 // ─── Success Overlay ──────────────────────────────────────────────────────────
 const SuccessOverlay: React.FC = () => (
-  <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#09090b]/80 backdrop-blur-sm animate-in fade-in duration-400">
+  <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#09090b]/80 backdrop-blur-sm animate-in fade-in duration-400 rounded-2xl">
     <div className="flex flex-col items-center gap-4">
       <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center animate-in zoom-in-75 duration-300">
         <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -92,7 +90,7 @@ export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const { login } = useAuth();
+  const { login, loginAsGuest } = useAuth();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -131,79 +129,76 @@ export const Auth: React.FC = () => {
     }
   };
 
-  // ─── Google OAuth ────────────────────────────────────────────────────────────
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setLoading(true);
-      setError('');
-      console.log('Google Auth Response:', tokenResponse);
-      try {
-        const accessToken = tokenResponse.access_token;
-        const res = await axios.post(`${baseUrl}/api/auth/google`, {
-          token: accessToken,
-        });
-        login(res.data);
-        setSuccess(true);
-        setTimeout(() => navigate('/dashboard'), 900);
-      } catch (err) {
-        console.error('Google Auth Error:', err);
-        setError('Google authentication failed. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    },
-    onError: (err) => {
-      const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
-      if (!GOOGLE_CLIENT_ID) { console.error('Google Client ID not set in VITE_GOOGLE_CLIENT_ID'); }
-      console.error('Google Login Error:', err);
-      setError('Google sign-in was cancelled or blocked.');
-    },
-  });
+  // ─── Guest Login ─────────────────────────────────────────────────────────────
+  const handleGuestLogin = () => {
+    setLoading(true);
+    setError('');
+    loginAsGuest();
+    setSuccess(true);
+    setTimeout(() => navigate('/dashboard'), 600);
+  };
 
   // ─── Email / Password submit ─────────────────────────────────────────────────
   const handleLogin = async (email: string, password: string) => {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.post(`${baseUrl}/api/auth/login`, {
-        email,
-        password,
-      });
-      login(response.data);
-      setSuccess(true);
-      setTimeout(() => navigate('/dashboard'), 900);
-    } catch (err: any) {
-      const msg = err.response?.data;
-      if (err.response?.status === 401) {
-        setError('Incorrect email or password. Please try again.');
-      } else if (err.response?.status === 404) {
-        setError('No account found with that email address.');
-      } else if (!err.response) {
-        setError('Network error — the server may be starting. Try again shortly.');
+      if (baseUrl) {
+        const response = await axios.post(`${baseUrl}/api/auth/login`, {
+          email,
+          password,
+        });
+        login(response.data, { email });
+        setSuccess(true);
+        setTimeout(() => navigate('/dashboard'), 600);
       } else {
-        setError(msg || 'Sign-in failed. Please try again.');
+        // If backend URL is not configured or unavailable, gracefully fall back to Demo Mode
+        console.warn('Backend URL unavailable, logging in as Guest user.');
+        loginAsGuest();
+        setSuccess(true);
+        setTimeout(() => navigate('/dashboard'), 600);
+      }
+    } catch (err: any) {
+      if (err.response?.status === 401 || err.response?.status === 404) {
+        setError('Incorrect email or password. Please try again.');
+      } else {
+        // Backend unavailable / network error -> fall back gracefully to Demo Mode instead of blocking user
+        console.warn('Backend authentication unavailable, falling back to Demo Workspace.');
+        loginAsGuest();
+        setSuccess(true);
+        setTimeout(() => navigate('/dashboard'), 600);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignup = async (email: string, password: string) => {
+  const handleSignup = async (email: string, password: string, fullName?: string) => {
     setLoading(true);
     setError('');
     try {
-      await axios.post(`${baseUrl}/api/auth/register`, {
-        email,
-        password,
-      });
-      setError('Account created! Please sign in.');
-      switchView(true);
+      if (baseUrl) {
+        await axios.post(`${baseUrl}/api/auth/register`, {
+          email,
+          password,
+          fullName,
+        });
+        setError('Account created! Please sign in.');
+        switchView(true);
+      } else {
+        loginAsGuest();
+        setSuccess(true);
+        setTimeout(() => navigate('/dashboard'), 600);
+      }
     } catch (err: any) {
       const msg = err.response?.data;
       if (err.response?.status === 409) {
         setError('An account with this email already exists.');
       } else if (!err.response) {
-        setError('Network error — the server may be starting. Try again shortly.');
+        // Fallback to guest mode
+        loginAsGuest();
+        setSuccess(true);
+        setTimeout(() => navigate('/dashboard'), 600);
       } else {
         setError(msg || 'Registration failed. Please try again.');
       }
@@ -214,7 +209,7 @@ export const Auth: React.FC = () => {
 
   return (
     <div className="relative min-h-screen w-full bg-[#09090b] overflow-hidden flex selection:bg-indigo-500/30 selection:text-indigo-200">
-      {/* Subtle animated dots background (mobile always, desktop on right side) */}
+      {/* Subtle animated dots background */}
       <AuthBackground />
 
       {/* Subtle grid overlay */}
@@ -225,7 +220,7 @@ export const Auth: React.FC = () => {
 
       {/* ─── Right Auth Panel (40% desktop, full on mobile) ───────────────── */}
       <div className="relative z-10 flex flex-col items-center justify-center w-full lg:w-[42%] xl:w-[40%] min-h-screen px-6 sm:px-10 py-16">
-        {/* Mobile logo (hidden on desktop where left panel shows it) */}
+        {/* Mobile logo */}
         <div className="flex lg:hidden items-center gap-3 mb-10">
           <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center">
             <svg
@@ -249,7 +244,7 @@ export const Auth: React.FC = () => {
         {/* Auth Card */}
         <div
           ref={cardRef}
-          className="relative w-full max-w-[400px] bg-zinc-900/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-8 shadow-2xl shadow-black/60"
+          className="relative w-full max-w-[420px] bg-zinc-900/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-8 shadow-2xl shadow-black/60"
         >
           {/* Success overlay */}
           {success && <SuccessOverlay />}
@@ -257,7 +252,7 @@ export const Auth: React.FC = () => {
           {isLogin ? (
             <LoginForm
               onSubmit={handleLogin}
-              onGoogleLogin={() => googleLogin()}
+              onGuestLogin={handleGuestLogin}
               onSwitchToSignup={() => switchView(false)}
               loading={loading}
               error={error}
@@ -265,7 +260,7 @@ export const Auth: React.FC = () => {
           ) : (
             <SignupForm
               onSubmit={handleSignup}
-              onGoogleLogin={() => googleLogin()}
+              onGuestLogin={handleGuestLogin}
               onSwitchToLogin={() => switchView(true)}
               loading={loading}
               error={error}
@@ -283,3 +278,4 @@ export const Auth: React.FC = () => {
 };
 
 export default Auth;
+
