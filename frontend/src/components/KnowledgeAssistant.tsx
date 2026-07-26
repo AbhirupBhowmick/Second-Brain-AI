@@ -127,26 +127,13 @@ export const KnowledgeAssistant: React.FC = () => {
       .join('\n\n');
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || '';
-      let replyContent = '';
-      let suggested: string[] = [];
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await axios.post(`${baseUrl}/api/chat`, {
+        prompt: `You are the Second Brain AI Knowledge Graph Assistant.\n\nUser Question: ${text}\n\nRetrieved Notes Context:\n${contextText}\n\nProvide an insightful, grounded answer highlighting the relationships between these notes.`,
+      });
+      const replyContent = res.data?.reply || 'Analyzed your knowledge graph concepts.';
 
-      if (baseUrl) {
-        const res = await axios.post(`${baseUrl}/api/chat`, {
-          prompt: `You are the Second Brain AI Knowledge Graph Assistant.\n\nUser Question: ${text}\n\nRetrieved Notes Context:\n${contextText}\n\nProvide an insightful, grounded answer highlighting the relationships between these notes.`,
-        });
-        replyContent = res.data?.reply || 'Analyzed your knowledge graph concepts.';
-      } else {
-        // Fallback intelligent graph synthesis
-        const matchedNotes = notes.filter((n) => activeNodeIds.includes(n.id));
-        if (matchedNotes.length > 0) {
-          replyContent = `Based on your Knowledge Graph substrate:\n\n• **Connected Concept**: ${matchedNotes[0].title}\n\n${matchedNotes[0].summary || matchedNotes[0].content}\n\n**Graph Relationships**: This concept links directly to ${matchedNotes.slice(1).map((n) => `"${n.title}"`).join(', ') || 'other tag clusters'}.`;
-        } else {
-          replyContent = `I searched across your ${notes.length} stored notes. The primary topic clusters include ${notes.slice(0, 3).map((n) => `"${n.title}"`).join(', ')}. Ask me to compare or synthesize any two concepts!`;
-        }
-      }
-
-      suggested = [
+      const suggested = [
         `How does this relate to ${notes[0]?.title || 'Architecture'}?`,
         'What additional notes should I create?',
         'Show connected graph relationships',
@@ -162,14 +149,14 @@ export const KnowledgeAssistant: React.FC = () => {
       };
 
       setMessages((prev) => [...prev, aiMsg]);
-    } catch {
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || err.response?.data?.reply || 'AI Service unavailable. Please verify API configuration.';
       setMessages((prev) => [
         ...prev,
         {
           id: 'msg_' + (Date.now() + 1),
           role: 'assistant',
-          content: `Knowledge Graph Synthesis Complete. Connected nodes: ${notes.slice(0, 2).map((n) => `"${n.title}"`).join(' and ')}.`,
-          suggestedQuestions: ['Compare these notes', 'Show related concepts'],
+          content: `[System Notice]: ${errorMsg}`,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);

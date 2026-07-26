@@ -48,54 +48,28 @@ export const Chat: React.FC = () => {
       .join('\n\n');
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || '';
-      if (baseUrl) {
-        const response = await axios.post(`${baseUrl}/api/chat`, {
-          prompt: `Knowledge Context:\n${contextText}\n\nUser Prompt: ${textToSend}`,
-        });
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const response = await axios.post(`${baseUrl}/api/chat`, {
+        prompt: `Knowledge Context:\n${contextText}\n\nUser Prompt: ${textToSend}`,
+      });
 
-        if (response.data?.reply) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: 'msg_' + (Date.now() + 1),
-              role: 'assistant',
-              content: response.data.reply,
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            },
-          ]);
-        } else {
-          setError('Invalid AI response received from server.');
-        }
-      } else {
-        const matches = notes.filter(
-          (n) =>
-            n.content.toLowerCase().includes(textToSend.toLowerCase()) ||
-            n.title.toLowerCase().includes(textToSend.toLowerCase())
-        );
-
-        let replyText = '';
-        if (matches.length > 0) {
-          replyText = `Based on your note **${matches[0].title}**:\n\n"${matches[0].content.slice(0, 200)}..."`;
-        } else if (notes.length > 0) {
-          replyText = `I searched your ${notes.length} knowledge base notes. Relevant topics include ${notes.slice(0, 2).map((n) => `"${n.title}"`).join(', ')}.`;
-        } else {
-          replyText = 'No notes found in your knowledge base. Create notes to allow AI to pull context!';
-        }
-
+      if (response.data?.reply) {
         setMessages((prev) => [
           ...prev,
           {
             id: 'msg_' + (Date.now() + 1),
             role: 'assistant',
-            content: replyText,
+            content: response.data.reply,
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           },
         ]);
+      } else {
+        setError('Invalid AI response received from server.');
       }
     } catch (err: any) {
       console.error('Chat error:', err);
-      setError('AI Service unavailable. Please verify API configuration or try again.');
+      const serverMsg = err.response?.data?.message || err.response?.data?.reply || 'AI Service unavailable. Verify API configuration or try again.';
+      setError(serverMsg);
     } finally {
       setLoading(false);
     }

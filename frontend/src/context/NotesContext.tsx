@@ -241,16 +241,14 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const generateAiSummary = async (content: string): Promise<string> => {
     if (!content.trim()) return 'No content to summarize.';
-    const baseUrl = import.meta.env.VITE_API_URL || '';
-    if (baseUrl) {
-      try {
-        const res = await axios.post(`${baseUrl}/api/chat`, {
-          prompt: `Summarize the following note concisely in 2 sentences:\n\n${content}`,
-        });
-        if (res.data?.reply) return res.data.reply;
-      } catch {
-        // fallback to extractive summary
-      }
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    try {
+      const res = await axios.post(`${baseUrl}/api/chat`, {
+        prompt: `Summarize the following note concisely in 2 sentences:\n\n${content}`,
+      });
+      if (res.data?.reply) return res.data.reply;
+    } catch {
+      // fallback to extractive summary
     }
     const clean = content.replace(/[#*`\-[\]]/g, '').trim();
     const sentences = clean.split(/(?<=[.!?])\s+/).filter(Boolean);

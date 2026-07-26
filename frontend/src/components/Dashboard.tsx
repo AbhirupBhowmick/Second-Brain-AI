@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from './Layout';
 import { useNotes } from '../context/NotesContext';
@@ -24,6 +24,7 @@ export const Dashboard: React.FC = () => {
     getStorageUsedFormatted,
     setIsCommandPaletteOpen,
     isLoading,
+    refetchNotes,
   } = useNotes();
 
   const [aiPrompt, setAiPrompt] = useState('');
@@ -31,6 +32,12 @@ export const Dashboard: React.FC = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (refetchNotes) {
+      refetchNotes();
+    }
+  }, []);
 
   // Filter notes by search query and active collection
   const collectionNotes = activeCollection
@@ -62,36 +69,18 @@ export const Dashboard: React.FC = () => {
       .join('\n\n');
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || '';
-      if (baseUrl) {
-        const res = await axios.post(`${baseUrl}/api/chat`, {
-          prompt: `Stored Knowledge Context:\n${contextText}\n\nUser Question: ${aiPrompt}`,
-        });
-        if (res.data?.reply) {
-          setAiResponse(res.data.reply);
-        } else {
-          setAiError('Unable to generate AI response. Please try again.');
-        }
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await axios.post(`${baseUrl}/api/chat`, {
+        prompt: `Stored Knowledge Context:\n${contextText}\n\nUser Question: ${aiPrompt}`,
+      });
+      if (res.data?.reply) {
+        setAiResponse(res.data.reply);
       } else {
-        const matches = filteredNotes.filter(
-          (n) =>
-            n.content.toLowerCase().includes(aiPrompt.toLowerCase()) ||
-            n.title.toLowerCase().includes(aiPrompt.toLowerCase())
-        );
-        if (matches.length > 0) {
-          setAiResponse(
-            `Relevant Note Context Found:\n\n• **${matches[0].title}**: "${matches[0].content.slice(0, 180)}..."`
-          );
-        } else if (filteredNotes.length > 0) {
-          setAiResponse(
-            `Found ${filteredNotes.length} notes in scope. Topics: ${filteredNotes.slice(0, 3).map((n) => `"${n.title}"`).join(', ')}.`
-          );
-        } else {
-          setAiResponse('No notes found in scope. Create notes to query Gemini with context.');
-        }
+        setAiError('Unable to generate AI response. Please try again.');
       }
-    } catch {
-      setAiError('AI service request failed. Verify backend API connection.');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.response?.data?.reply || 'AI service request failed. Verify backend API connection.';
+      setAiError(msg);
     } finally {
       setAiLoading(false);
     }
