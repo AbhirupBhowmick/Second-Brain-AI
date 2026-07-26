@@ -20,22 +20,34 @@ export interface CollectionItem {
   color: string;
 }
 
+export interface ActivityItem {
+  id: string;
+  action: string;
+  targetTitle: string;
+  timestamp: string;
+}
+
 interface NotesContextType {
   notes: NoteItem[];
   collections: CollectionItem[];
+  activities: ActivityItem[];
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   activeCollection: string | null;
   setActiveCollection: (id: string | null) => void;
-  addNote: (note: Partial<NoteItem>) => NoteItem;
-  updateNote: (id: string, note: Partial<NoteItem>) => void;
-  deleteNote: (id: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  refetchNotes: () => Promise<void>;
+  addNote: (note: Partial<NoteItem>) => Promise<NoteItem>;
+  updateNote: (id: string, note: Partial<NoteItem>) => Promise<void>;
+  deleteNote: (id: string) => Promise<void>;
   togglePinNote: (id: string) => void;
-  generateAiSummary: (content: string) => string;
-  generateAiTags: (content: string, title?: string) => string[];
-  importMarkdown: (fileContent: string, fileName: string) => NoteItem;
+  generateAiSummary: (content: string) => Promise<string>;
+  generateAiTags: (content: string, title?: string) => Promise<string[]>;
+  importMarkdown: (fileContent: string, fileName: string) => Promise<NoteItem>;
   exportMarkdown: (note?: NoteItem) => void;
   getDailySummary: () => string;
+  getStorageUsedFormatted: () => string;
   selectedNoteId: string | null;
   setSelectedNoteId: (id: string | null) => void;
   isCommandPaletteOpen: boolean;
@@ -45,78 +57,15 @@ interface NotesContextType {
 const DEFAULT_COLLECTIONS: CollectionItem[] = [
   { id: 'engineering', name: 'Engineering', icon: 'terminal', color: 'text-indigo-400' },
   { id: 'ai-research', name: 'AI Research', icon: 'psychology', color: 'text-cyan-400' },
-  { id: 'product', name: 'Product Ideas', icon: 'lightbulb', color: 'text-amber-400' },
+  { id: 'product', name: 'Product', icon: 'lightbulb', color: 'text-amber-400' },
   { id: 'personal', name: 'Personal', icon: 'person', color: 'text-emerald-400' },
-];
-
-const INITIAL_NOTES: NoteItem[] = [
-  {
-    id: 'note-1',
-    title: 'System Architecture & Microservices',
-    content: `Exploring decoupled graph database querying using Spring Boot and Neo4j. Key requirements include vector embedding generation for semantic search, ultra-fast cache invalidation, and async event streaming via WebSockets.
-
-### High-level Design:
-- Frontend: Vite + React 19 + Tailwind CSS
-- Backend: Spring Boot API Gateway + Neo4j Graph DB
-- Search: Hybrid BM25 & Dense Semantic Vector Indexing`,
-    summary: 'Decoupled architecture combining Spring Boot, Neo4j, and dense vector search for high-speed graph queries.',
-    tags: ['architecture', 'backend', 'neo4j', 'graph'],
-    collectionId: 'engineering',
-    pinned: true,
-    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-  },
-  {
-    id: 'note-2',
-    title: 'LLM Context Window Optimization',
-    content: `Strategies to compress long-form user knowledge graphs into dense prompt context. Utilizing sub-graph retrieval algorithms and BM25 hybrid ranking to reduce token overhead by 60%.
-
-1. Sub-graph Extraction: Fetch only 2-hop connected nodes.
-2. Summarization Layer: Auto-generate concise 2-sentence node synopses.
-3. Dynamic Prompt Assembly: Inject active context variables on the fly.`,
-    summary: 'Techniques for sub-graph extraction and BM25 hybrid ranking to fit graph context into LLM prompt constraints.',
-    tags: ['ai', 'optimization', 'llm', 'context'],
-    collectionId: 'ai-research',
-    pinned: true,
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-  },
-  {
-    id: 'note-3',
-    title: 'React 19 & Command Palette UX',
-    content: `Building a Raycast/Linear-inspired command palette (Cmd+K / Ctrl+K) in React. Features instant fuzzy search across notes, tags, and action shortcuts.
-
-Implemented keyboard accessibility with Arrow Up/Down navigation, Enter execution, and Escape closing.`,
-    summary: 'Raycast-style command palette implementation with keyboard navigation and instant global fuzzy search.',
-    tags: ['frontend', 'react', 'ux', 'raycast'],
-    collectionId: 'engineering',
-    pinned: false,
-    createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-  },
-  {
-    id: 'note-4',
-    title: 'Knowledge Substrate Roadmap',
-    content: `Product roadmap for Second Brain AI:
-- [x] Command Palette (Cmd+K)
-- [x] Markdown Import & Export
-- [x] Interactive Knowledge Graph Preview
-- [ ] Real-time Collaborative Graph Nodes
-- [ ] Local Offline Vector Cache`,
-    summary: 'Current feature checklist and future roadmap for Second Brain AI platform.',
-    tags: ['roadmap', 'product', 'ideas'],
-    collectionId: 'product',
-    pinned: false,
-    createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-  },
 ];
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
 
 export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notes, setNotes] = useState<NoteItem[]>(() => {
-    const saved = localStorage.getItem('sb_notes');
+    const saved = localStorage.getItem('sb_notes_v2');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -124,7 +73,19 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // fallback
       }
     }
-    return INITIAL_NOTES;
+    return [];
+  });
+
+  const [activities, setActivities] = useState<ActivityItem[]>(() => {
+    const saved = localStorage.getItem('sb_activities');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // fallback
+      }
+    }
+    return [];
   });
 
   const [collections] = useState<CollectionItem[]>(DEFAULT_COLLECTIONS);
@@ -132,10 +93,63 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Sync to local storage
+  useEffect(() => {
+    localStorage.setItem('sb_notes_v2', JSON.stringify(notes));
+  }, [notes]);
 
   useEffect(() => {
-    localStorage.setItem('sb_notes', JSON.stringify(notes));
-  }, [notes]);
+    localStorage.setItem('sb_activities', JSON.stringify(activities));
+  }, [activities]);
+
+  const addActivity = (action: string, targetTitle: string) => {
+    const newAct: ActivityItem = {
+      id: 'act_' + Date.now(),
+      action,
+      targetTitle,
+      timestamp: new Date().toISOString(),
+    };
+    setActivities((prev) => [newAct, ...prev.slice(0, 19)]);
+  };
+
+  // Fetch real notes from backend on mount
+  const refetchNotes = async () => {
+    setIsLoading(true);
+    setError(null);
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    if (!baseUrl) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const res = await axios.get(`${baseUrl}/api/notes`);
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const mapped: NoteItem[] = res.data.map((item: any) => ({
+          id: String(item.id),
+          title: item.title || 'Untitled Note',
+          content: item.content || '',
+          summary: item.summary || '',
+          tags: Array.isArray(item.tags) ? item.tags : ['general'],
+          pinned: false,
+          createdAt: item.createdAt || new Date().toISOString(),
+          updatedAt: item.updatedAt || new Date().toISOString(),
+        }));
+        setNotes(mapped);
+      }
+    } catch (err: any) {
+      console.warn('Backend fetch notice (using local storage notes):', err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refetchNotes();
+  }, []);
 
   // Global hotkey Cmd+K / Ctrl+K listener
   useEffect(() => {
@@ -149,15 +163,25 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const generateAiSummary = (content: string): string => {
-    if (!content.trim()) return 'No content provided.';
+  const generateAiSummary = async (content: string): Promise<string> => {
+    if (!content.trim()) return 'No content to summarize.';
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    if (baseUrl) {
+      try {
+        const res = await axios.post(`${baseUrl}/api/chat`, {
+          prompt: `Summarize the following note concisely in 2 sentences:\n\n${content}`,
+        });
+        if (res.data?.reply) return res.data.reply;
+      } catch {
+        // fallback to extractive summary
+      }
+    }
     const clean = content.replace(/[#*`\-[\]]/g, '').trim();
     const sentences = clean.split(/(?<=[.!?])\s+/).filter(Boolean);
-    if (sentences.length <= 2) return clean;
-    return sentences.slice(0, 2).join(' ');
+    return sentences.slice(0, 2).join(' ') || clean.slice(0, 140);
   };
 
-  const generateAiTags = (content: string, title: string = ''): string[] => {
+  const generateAiTags = async (content: string, title: string = ''): Promise<string[]> => {
     const text = `${title} ${content}`.toLowerCase();
     const candidates = [
       'architecture', 'backend', 'frontend', 'ai', 'graph', 'react',
@@ -165,18 +189,18 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       'optimization', 'performance', 'markdown', 'security', 'api'
     ];
     const tags = candidates.filter((word) => text.includes(word));
-    return tags.length > 0 ? tags.slice(0, 4) : ['general', 'notes'];
+    return tags.length > 0 ? tags.slice(0, 4) : ['general'];
   };
 
-  const addNote = (partialNote: Partial<NoteItem>): NoteItem => {
+  const addNote = async (partialNote: Partial<NoteItem>): Promise<NoteItem> => {
     const newTitle = partialNote.title || 'Untitled Note';
     const newContent = partialNote.content || '';
     const newNote: NoteItem = {
       id: 'note_' + Date.now(),
       title: newTitle,
       content: newContent,
-      summary: partialNote.summary || generateAiSummary(newContent),
-      tags: partialNote.tags || generateAiTags(newContent, newTitle),
+      summary: partialNote.summary || (newContent ? newContent.slice(0, 140) : 'No content.'),
+      tags: partialNote.tags || ['note'],
       collectionId: partialNote.collectionId || 'engineering',
       pinned: partialNote.pinned || false,
       createdAt: new Date().toISOString(),
@@ -184,51 +208,93 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setNotes((prev) => [newNote, ...prev]);
+    addActivity('Created note', newTitle);
 
-    // Try posting to backend if available
     const baseUrl = import.meta.env.VITE_API_URL || '';
     if (baseUrl) {
-      axios.post(`${baseUrl}/api/notes`, {
-        title: newNote.title,
-        content: newNote.content,
-        createdAt: newNote.createdAt
-      }).catch((err) => console.warn('Backend sync warning:', err));
+      try {
+        const res = await axios.post(`${baseUrl}/api/notes`, {
+          title: newNote.title,
+          content: newNote.content,
+        });
+        if (res.data?.id) {
+          setNotes((prev) =>
+            prev.map((n) => (n.id === newNote.id ? { ...n, id: String(res.data.id) } : n))
+          );
+        }
+      } catch (err) {
+        console.warn('Backend sync note creation notice:', err);
+      }
     }
 
     return newNote;
   };
 
-  const updateNote = (id: string, partialNote: Partial<NoteItem>) => {
+  const updateNote = async (id: string, partialNote: Partial<NoteItem>) => {
+    let updatedTitle = '';
     setNotes((prev) =>
       prev.map((n) => {
         if (n.id === id) {
-          const updatedContent = partialNote.content ?? n.content;
-          const updatedTitle = partialNote.title ?? n.title;
+          updatedTitle = partialNote.title ?? n.title;
           return {
             ...n,
             ...partialNote,
-            summary: partialNote.summary || generateAiSummary(updatedContent),
-            tags: partialNote.tags || generateAiTags(updatedContent, updatedTitle),
             updatedAt: new Date().toISOString(),
           };
         }
         return n;
       })
     );
+
+    if (updatedTitle) {
+      addActivity('Updated note', updatedTitle);
+    }
+
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    if (baseUrl && !id.startsWith('note_')) {
+      try {
+        await axios.put(`${baseUrl}/api/notes/${id}`, {
+          title: partialNote.title,
+          content: partialNote.content,
+        });
+      } catch (err) {
+        console.warn('Backend sync note update notice:', err);
+      }
+    }
   };
 
-  const deleteNote = (id: string) => {
+  const deleteNote = async (id: string) => {
+    const target = notes.find((n) => n.id === id);
+    if (target) {
+      addActivity('Deleted note', target.title);
+    }
     setNotes((prev) => prev.filter((n) => n.id !== id));
     if (selectedNoteId === id) setSelectedNoteId(null);
+
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    if (baseUrl && !id.startsWith('note_')) {
+      try {
+        await axios.delete(`${baseUrl}/api/notes/${id}`);
+      } catch (err) {
+        console.warn('Backend sync note deletion notice:', err);
+      }
+    }
   };
 
   const togglePinNote = (id: string) => {
     setNotes((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n))
+      prev.map((n) => {
+        if (n.id === id) {
+          const newPinned = !n.pinned;
+          addActivity(newPinned ? 'Pinned note' : 'Unpinned note', n.title);
+          return { ...n, pinned: newPinned };
+        }
+        return n;
+      })
     );
   };
 
-  const importMarkdown = (fileContent: string, fileName: string): NoteItem => {
+  const importMarkdown = async (fileContent: string, fileName: string): Promise<NoteItem> => {
     const lines = fileContent.split('\n');
     let title = fileName.replace(/\.md$/i, '');
     let body = fileContent;
@@ -238,7 +304,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       body = lines.slice(1).join('\n').trim();
     }
 
-    return addNote({
+    return await addNote({
       title,
       content: body,
     });
@@ -258,13 +324,23 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    addActivity('Exported markdown', noteToExport.title);
   };
 
   const getDailySummary = (): string => {
-    if (notes.length === 0) return 'No notes recorded today.';
-    const recent = notes.slice(0, 3);
-    const titles = recent.map((n) => `"${n.title}"`).join(', ');
-    return `Your brain currently indexes ${notes.length} note nodes. Top active topics include ${titles}. Primary stack focus is architecture, graph database queries, and AI vector search.`;
+    if (notes.length === 0) return 'No notes recorded in your knowledge substrate yet.';
+    const titles = notes.slice(0, 3).map((n) => `"${n.title}"`).join(', ');
+    return `Your brain currently indexes ${notes.length} note nodes. Top active topics: ${titles}.`;
+  };
+
+  const getStorageUsedFormatted = (): string => {
+    let bytes = 0;
+    for (const n of notes) {
+      bytes += new Blob([n.title + n.content]).size;
+    }
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
   return (
@@ -272,10 +348,14 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       value={{
         notes,
         collections,
+        activities,
         searchQuery,
         setSearchQuery,
         activeCollection,
         setActiveCollection,
+        isLoading,
+        error,
+        refetchNotes,
         addNote,
         updateNote,
         deleteNote,
@@ -285,6 +365,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         importMarkdown,
         exportMarkdown,
         getDailySummary,
+        getStorageUsedFormatted,
         selectedNoteId,
         setSelectedNoteId,
         isCommandPaletteOpen,

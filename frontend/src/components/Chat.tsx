@@ -4,6 +4,7 @@ import { useNotes } from '../context/NotesContext';
 import axios from 'axios';
 
 interface Message {
+  id: string;
   role: 'user' | 'assistant';
   content: string;
   time: string;
@@ -11,15 +12,10 @@ interface Message {
 
 export const Chat: React.FC = () => {
   const { notes } = useNotes();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: `AI Co-Processor ready. I have indexed ${notes.length} note nodes from your knowledge substrate. Ask me questions about your architecture, research, or notes!`,
-      time: 'System Ready',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -30,75 +26,76 @@ export const Chat: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || loading) return;
+  const handleSend = async (overrideInput?: string) => {
+    const textToSend = overrideInput || input;
+    if (!textToSend.trim() || loading) return;
 
+    setError(null);
     const userMessage: Message = {
+      id: 'msg_' + Date.now(),
       role: 'user',
-      content: input,
+      content: textToSend,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    const currentInput = input;
-    setInput('');
+    if (!overrideInput) setInput('');
     setLoading(true);
 
-    const contextText = notes.map((n) => `Note: ${n.title}\nContent: ${n.content}`).join('\n\n');
+    const contextText = notes
+      .slice(0, 10)
+      .map((n) => `Title: ${n.title}\nContent: ${n.content}`)
+      .join('\n\n');
 
     try {
       const baseUrl = import.meta.env.VITE_API_URL || '';
       if (baseUrl) {
         const response = await axios.post(`${baseUrl}/api/chat`, {
-          prompt: `Knowledge Base Context:\n${contextText}\n\nUser Question: ${currentInput}`,
+          prompt: `Knowledge Context:\n${contextText}\n\nUser Prompt: ${textToSend}`,
         });
-        const text = response.data.reply;
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: text,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          },
-        ]);
-      } else {
-        // Fallback intelligent query matching user's active notes
-        setTimeout(() => {
-          const matches = notes.filter(
-            (n) =>
-              n.content.toLowerCase().includes(currentInput.toLowerCase()) ||
-              n.title.toLowerCase().includes(currentInput.toLowerCase()) ||
-              n.tags.some((t) => currentInput.toLowerCase().includes(t.toLowerCase()))
-          );
 
-          let replyText = '';
-          if (matches.length > 0) {
-            replyText = `Based on your note **${matches[0].title}**:\n\n${matches[0].summary || matches[0].content}\n\n*Related tags: ${matches[0].tags.map((t) => '#' + t).join(' ')}*`;
-          } else {
-            replyText = `I searched across your ${notes.length} knowledge nodes. Key subjects in your substrate include ${notes.slice(0, 3).map((n) => `"${n.title}"`).join(', ')}. How would you like to build on these?`;
-          }
-
+        if (response.data?.reply) {
           setMessages((prev) => [
             ...prev,
             {
+              id: 'msg_' + (Date.now() + 1),
               role: 'assistant',
-              content: replyText,
+              content: response.data.reply,
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             },
           ]);
-          setLoading(false);
-        }, 500);
-        return;
+        } else {
+          setError('Invalid AI response received from server.');
+        }
+      } else {
+        const matches = notes.filter(
+          (n) =>
+            n.content.toLowerCase().includes(textToSend.toLowerCase()) ||
+            n.title.toLowerCase().includes(textToSend.toLowerCase())
+        );
+
+        let replyText = '';
+        if (matches.length > 0) {
+          replyText = `Based on your note **${matches[0].title}**:\n\n"${matches[0].content.slice(0, 200)}..."`;
+        } else if (notes.length > 0) {
+          replyText = `I searched your ${notes.length} knowledge base notes. Relevant topics include ${notes.slice(0, 2).map((n) => `"${n.title}"`).join(', ')}.`;
+        } else {
+          replyText = 'No notes found in your knowledge base. Create notes to allow AI to pull context!';
+        }
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: 'msg_' + (Date.now() + 1),
+            role: 'assistant',
+            content: replyText,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
       }
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: `Analyzed notes: ${notes.slice(0, 2).map((n) => `"${n.title}"`).join(' and ')}. Feel free to add more notes or refine your question.`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+    } catch (err: any) {
+      console.error('Chat error:', err);
+      setError('AI Service unavailable. Please verify API configuration or try again.');
     } finally {
       setLoading(false);
     }
@@ -108,62 +105,111 @@ export const Chat: React.FC = () => {
     <Layout>
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#09090b]">
         {/* Header */}
-        <header className="px-6 lg:px-8 py-4 border-b border-white/[0.08] bg-zinc-950/80 backdrop-blur-xl flex justify-between items-center relative z-20">
+        <header className="px-6 lg:px-8 py-3.5 border-b border-white/[0.08] bg-zinc-950/80 backdrop-blur-xl flex justify-between items-center relative z-20">
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2.5">
               <span className="material-symbols-outlined text-indigo-400">smart_toy</span>
               AI Co-Processor
             </h2>
             <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-2 py-0.5 rounded border border-white/5">
-              {notes.length} Notes Loaded
+              Gemini Integration
             </span>
           </div>
+
+          {messages.length > 0 && (
+            <button
+              onClick={() => setMessages([])}
+              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
+            >
+              Clear Chat
+            </button>
+          )}
         </header>
 
-        {/* Chat Messages List */}
+        {/* Chat Messages List / Empty State */}
         <div className="flex-1 overflow-y-auto p-6 lg:p-10 lg:px-20 space-y-6 scroll-hide relative z-10 pb-36">
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in duration-300`}
-            >
-              <div className={`flex items-start gap-3 max-w-2xl ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
-                    msg.role === 'user'
-                      ? 'bg-indigo-600/20 border-indigo-500/30 text-indigo-300'
-                      : 'bg-zinc-900 border-white/[0.1] text-zinc-400'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-base">
-                    {msg.role === 'user' ? 'person' : 'smart_toy'}
-                  </span>
-                </div>
+          {messages.length === 0 ? (
+            /* Clean Empty State */
+            <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4 my-auto">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <span className="material-symbols-outlined text-3xl">smart_toy</span>
+              </div>
+              <div className="space-y-1 max-w-sm">
+                <h3 className="text-base font-bold text-white">No conversations found</h3>
+                <p className="text-xs text-zinc-400 font-light">
+                  Ask a question or brainstorm with your AI assistant using your notes as context.
+                </p>
+              </div>
 
-                <div className={`space-y-1 ${msg.role === 'user' ? 'text-right' : ''}`}>
-                  <div
-                    className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-line shadow-md ${
-                      msg.role === 'user'
-                        ? 'bg-indigo-600 text-white rounded-tr-none'
-                        : 'bg-zinc-900/90 text-zinc-200 border border-white/[0.08] rounded-tl-none font-light'
-                    }`}
+              {/* Sample Prompts */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-4 max-w-md w-full">
+                {[
+                  'Summarize my active notes',
+                  'What topics are documented?',
+                  'Help me structure a new project',
+                  'Find architecture notes',
+                ].map((promptText) => (
+                  <button
+                    key={promptText}
+                    onClick={() => handleSend(promptText)}
+                    className="p-3 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/[0.08] text-xs text-zinc-300 text-left transition-all cursor-pointer"
                   >
-                    {msg.content}
-                  </div>
-                  <p className="text-[10px] font-mono text-zinc-500 px-1">{msg.time}</p>
-                </div>
+                    "{promptText}"
+                  </button>
+                ))}
               </div>
             </div>
-          ))}
+          ) : (
+            messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in duration-300`}
+              >
+                <div className={`flex items-start gap-3 max-w-2xl ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
+                      msg.role === 'user'
+                        ? 'bg-indigo-600/20 border-indigo-500/30 text-indigo-300'
+                        : 'bg-zinc-900 border-white/[0.1] text-zinc-400'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-base">
+                      {msg.role === 'user' ? 'person' : 'smart_toy'}
+                    </span>
+                  </div>
+
+                  <div className={`space-y-1 ${msg.role === 'user' ? 'text-right' : ''}`}>
+                    <div
+                      className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-line shadow-md ${
+                        msg.role === 'user'
+                          ? 'bg-indigo-600 text-white rounded-tr-none'
+                          : 'bg-zinc-900/90 text-zinc-200 border border-white/[0.08] rounded-tl-none font-light'
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                    <p className="text-[10px] font-mono text-zinc-500 px-1">{msg.time}</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
 
           {loading && (
             <div className="flex justify-start animate-pulse">
               <div className="flex items-center gap-3 p-4 rounded-2xl bg-zinc-900/80 border border-white/[0.08]">
-                <div className="w-3.5 h-3.5 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin"></div>
-                <span className="text-xs text-zinc-400 font-mono">Analyzing notes...</span>
+                <div className="w-3.5 h-3.5 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
+                <span className="text-xs text-zinc-400 font-mono">Querying Gemini API...</span>
               </div>
             </div>
           )}
+
+          {error && (
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 animate-in fade-in">
+              {error}
+            </div>
+          )}
+
           <div ref={chatEndRef} />
         </div>
 
@@ -175,12 +221,12 @@ export const Chat: React.FC = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-                placeholder="Ask AI about your notes (Press Enter to send)..."
+                placeholder="Ask AI about your notes (Press Enter)..."
                 rows={1}
                 className="flex-1 bg-transparent border-none text-white placeholder-zinc-500 focus:ring-0 px-3 py-2 text-sm resize-none"
               />
               <button
-                onClick={handleSend}
+                onClick={() => handleSend()}
                 disabled={loading || !input.trim()}
                 className="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white flex items-center justify-center transition-all cursor-pointer shrink-0"
               >

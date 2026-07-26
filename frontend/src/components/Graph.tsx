@@ -3,6 +3,7 @@ import Layout from './Layout';
 import ForceGraph2D from 'react-force-graph-2d';
 import { useNotes, type NoteItem } from '../context/NotesContext';
 import { useNavigate } from 'react-router-dom';
+import { useModal } from '../context/ModalContext';
 
 interface GraphNode {
   id: string;
@@ -21,10 +22,11 @@ interface GraphLink {
 
 export const Graph: React.FC = () => {
   const { notes, setSearchQuery } = useNotes();
+  const { openModal } = useModal();
   const navigate = useNavigate();
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
-  // Transform real user notes into graph nodes and create links based on shared tags
+  // Transform real user notes into graph nodes and links based on shared tags
   const graphData = useMemo(() => {
     const nodes: GraphNode[] = notes.map((n) => ({
       id: n.id,
@@ -58,8 +60,24 @@ export const Graph: React.FC = () => {
         {/* Force Graph Canvas Area */}
         <div className="flex-1 relative overflow-hidden bg-[#05080f] min-h-[450px]">
           {graphData.nodes.length === 0 ? (
-            <div className="absolute inset-0 flex items-center justify-center text-slate-500">
-              <p className="text-sm font-medium">No notes available to construct knowledge graph.</p>
+            /* Clean Empty State */
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <span className="material-symbols-outlined text-3xl">hub</span>
+              </div>
+              <div className="max-w-md space-y-1">
+                <h3 className="text-lg font-bold text-white">Your Knowledge Graph is empty</h3>
+                <p className="text-xs text-zinc-400 font-light leading-relaxed">
+                  Create your first note to start mapping concepts, tags, and AI-powered relationships across your second brain.
+                </p>
+              </div>
+              <button
+                onClick={openModal}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/20"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>
+                <span>Create First Note</span>
+              </button>
             </div>
           ) : (
             <ForceGraph2D
@@ -157,7 +175,7 @@ export const Graph: React.FC = () => {
                 </div>
               ) : (
                 <p className="text-xs text-zinc-500 italic">
-                  Click any node on the canvas to inspect its details and connections.
+                  Click any node on the canvas to inspect details and connections.
                 </p>
               )}
             </div>

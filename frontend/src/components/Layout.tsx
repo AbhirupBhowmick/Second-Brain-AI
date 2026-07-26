@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Sidebar from './Sidebar';
 import { useModal } from '../context/ModalContext';
+import { useNotes } from '../context/NotesContext';
+import { useNavigate } from 'react-router-dom';
 
 const NeuralBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -12,7 +14,7 @@ const NeuralBackground = () => {
     if (!ctx) return;
 
     let particles: { x: number; y: number; vx: number; vy: number; size: number; alpha: number }[] = [];
-    const particleCount = 50;
+    const particleCount = 35;
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -25,10 +27,10 @@ const NeuralBackground = () => {
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.2,
-          vy: (Math.random() - 0.5) * 0.2,
-          size: Math.random() * 2 + 1,
-          alpha: Math.random() * 0.5 + 0.1
+          vx: (Math.random() - 0.5) * 0.15,
+          vy: (Math.random() - 0.5) * 0.15,
+          size: Math.random() * 1.5 + 0.8,
+          alpha: Math.random() * 0.4 + 0.1,
         });
       }
     };
@@ -47,7 +49,7 @@ const NeuralBackground = () => {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(56, 189, 248, ${p.alpha * 0.3})`;
+        ctx.fillStyle = `rgba(99, 102, 241, ${p.alpha * 0.25})`;
         ctx.fill();
 
         for (let j = i + 1; j < particles.length; j++) {
@@ -56,10 +58,10 @@ const NeuralBackground = () => {
           const dy = p.y - p2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 250) {
+          if (dist < 200) {
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(56, 189, 248, ${(1 - dist / 250) * 0.1})`;
-            ctx.lineWidth = (1 - dist / 250) * 0.8;
+            ctx.strokeStyle = `rgba(99, 102, 241, ${(1 - dist / 200) * 0.08})`;
+            ctx.lineWidth = (1 - dist / 200) * 0.6;
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
             ctx.stroke();
@@ -79,84 +81,99 @@ const NeuralBackground = () => {
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      <div className="absolute inset-0 bg-[#05080f]"></div>
-      {/* Neural Aura - Slow moving gradients with increased visibility */}
-      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/20 rounded-full blur-[140px] animate-neural-drift opacity-80"></div>
-      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] bg-purple-500/15 rounded-full blur-[180px] animate-neural-drift-slow opacity-60"></div>
-      <div className="absolute top-[20%] right-[10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] animate-neural-drift opacity-40"></div>
-      
-      <canvas ref={canvasRef} className="absolute inset-0 opacity-60" />
-      
-      {/* Global Grain/Noise Overlay for texture */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+      <div className="absolute inset-0 bg-[#09090b]"></div>
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none"></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-cyan-600/10 rounded-full blur-[180px] pointer-events-none"></div>
+      <canvas ref={canvasRef} className="absolute inset-0 opacity-40" />
     </div>
   );
 };
 
-import axios from 'axios';
-
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isModalOpen, closeModal } = useModal();
-  const [projectName, setProjectName] = React.useState('');
-  const [isCreating, setIsCreating] = React.useState(false);
+  const { addNote } = useNotes();
+  const navigate = useNavigate();
 
-  const handleCreateProject = async () => {
-    if (!projectName.trim()) return;
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteContent, setNoteContent] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleCreateNote = async () => {
+    if (!noteTitle.trim() && !noteContent.trim()) return;
     setIsCreating(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/projects`, { name: projectName });
-      setProjectName('');
+      await addNote({
+        title: noteTitle.trim() || 'Untitled Note',
+        content: noteContent.trim(),
+      });
+      setNoteTitle('');
+      setNoteContent('');
       closeModal();
+      navigate('/notes');
     } catch (error) {
-      console.error("Error creating project", error);
+      console.error('Error creating note:', error);
     } finally {
       setIsCreating(false);
     }
   };
 
   return (
-    <div className="flex w-full min-h-screen bg-[#05080f] text-white selection:bg-primary/30 selection:text-white relative">
+    <div className="flex w-full min-h-screen bg-[#09090b] text-white selection:bg-indigo-500/30 selection:text-indigo-200 relative">
       <NeuralBackground />
       <Sidebar />
-      <div className="flex-1 lg:ml-72 relative z-10 flex flex-col pt-16 lg:pt-0 overflow-y-auto max-h-screen">
+      <div className="flex-1 lg:ml-64 relative z-10 flex flex-col pt-16 lg:pt-0 overflow-y-auto max-h-screen">
         {children}
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#0a0f1a] border border-white/10 p-8 rounded-3xl shadow-2xl max-w-md w-full relative animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md animate-in fade-in duration-200 p-4">
+          <div className="bg-[#0c101c] border border-white/[0.1] p-6 rounded-2xl shadow-2xl max-w-lg w-full relative animate-in zoom-in-95 duration-200 space-y-4">
             <button 
               onClick={closeModal}
-              className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined">close</span>
+              <span className="material-symbols-outlined text-lg">close</span>
             </button>
-            <h2 className="text-2xl font-bold text-white mb-2">Initialize Substrate</h2>
-            <p className="text-sm text-slate-400 mb-6">Create a new cognitive node in your neural network.</p>
-            <input 
-              type="text" 
-              placeholder="Project Name..." 
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              className="w-full px-5 py-4 bg-white/[0.02] border border-white/[0.05] rounded-2xl text-white placeholder-slate-600 focus:outline-none focus:border-primary/40 focus:bg-white/[0.04] transition-all text-base shadow-inner mb-4"
-            />
-            <div className="flex gap-4">
+            
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <span className="material-symbols-outlined text-indigo-400">edit_note</span>
+                Create New Note
+              </h2>
+              <p className="text-xs text-zinc-400">Document a new concept into your second brain.</p>
+            </div>
+
+            <div className="space-y-3">
+              <input 
+                type="text" 
+                placeholder="Note Title..." 
+                value={noteTitle}
+                onChange={(e) => setNoteTitle(e.target.value)}
+                className="w-full px-4 py-3 bg-zinc-950 border border-white/[0.08] rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50 text-sm"
+              />
+
+              <textarea 
+                placeholder="Write your note content..." 
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                rows={4}
+                className="w-full px-4 py-3 bg-zinc-950 border border-white/[0.08] rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50 text-sm resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
               <button 
                 onClick={closeModal}
-                className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl transition-all font-bold"
+                className="flex-1 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-white/[0.08] rounded-xl transition-all font-medium text-xs cursor-pointer"
               >
                 Cancel
               </button>
               <button 
-                onClick={handleCreateProject}
-                disabled={isCreating || !projectName.trim()}
-                className={`flex-1 py-4 rounded-2xl transition-all font-bold ${
-                  isCreating || !projectName.trim() 
-                    ? 'bg-primary/10 text-primary/50 cursor-not-allowed' 
-                    : 'bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20'
-                }`}
+                onClick={handleCreateNote}
+                disabled={isCreating || (!noteTitle.trim() && !noteContent.trim())}
+                className="flex-1 py-2.5 rounded-xl transition-all font-semibold text-xs bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white shadow-lg shadow-indigo-600/20 cursor-pointer"
               >
-                {isCreating ? 'Initializing...' : 'Create'}
+                {isCreating ? 'Creating...' : 'Create Note'}
               </button>
             </div>
           </div>
