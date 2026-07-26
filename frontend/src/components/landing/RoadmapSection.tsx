@@ -1,5 +1,4 @@
-import React, { useEffect, useRef } from 'react';
-import gsap from 'gsap';
+import React from 'react';
 
 const CheckIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -78,48 +77,13 @@ const columns = [
 ];
 
 const RoadmapSection: React.FC = () => {
-  const sectionRef  = useRef<HTMLDivElement>(null);
-  const cardsRef    = useRef<HTMLDivElement>(null);
-  const lineRef     = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
 
-          // Animate the connector line growing left-to-right
-          if (lineRef.current) {
-            gsap.fromTo(
-              lineRef.current,
-              { scaleX: 0, transformOrigin: 'left center' },
-              { scaleX: 1, duration: 0.8, ease: 'power2.out' }
-            );
-          }
-          // Stagger cards in
-          if (cardsRef.current) {
-            gsap.from(Array.from(cardsRef.current.children), {
-              opacity: 0,
-              y: 28,
-              duration: 0.65,
-              stagger: 0.13,
-              ease: 'power3.out',
-              delay: 0.15,
-            });
-          }
-          observer.disconnect();
-        });
-      },
-      { threshold: 0.12 }
-    );
-    if (sectionRef.current) observer.observe(sectionRef.current);
-    return () => observer.disconnect();
-  }, []);
+
 
   return (
     <section
       id="roadmap"
-      ref={sectionRef}
       className="py-16 lg:py-24 px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/[0.06]"
     >
       {/* ── Header ── */}
@@ -140,12 +104,8 @@ const RoadmapSection: React.FC = () => {
         {/* Track */}
         <div className="h-px w-full bg-white/[0.07]" />
 
-        {/* Animated fill */}
-        <div
-          ref={lineRef}
-          className="absolute inset-y-0 left-0 right-0 h-px bg-gradient-to-r from-emerald-500/50 via-indigo-500/50 to-purple-500/50"
-          style={{ transformOrigin: 'left center' }}
-        />
+        {/* Static fill line */}
+        <div className="absolute inset-y-0 left-0 right-0 h-px bg-gradient-to-r from-emerald-500/50 via-indigo-500/50 to-purple-500/50" />
 
         {/* Three positioned dots — aligned to card centres (0%, 50%, 100%) */}
         {[
@@ -162,10 +122,7 @@ const RoadmapSection: React.FC = () => {
       </div>
 
       {/* ── Cards ── */}
-      <div
-        ref={cardsRef}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
-      >
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {columns.map((col, idx) => {
           const { Icon } = col;
           return (

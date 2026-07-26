@@ -1,5 +1,4 @@
-import React, { useEffect, useRef } from 'react';
-import gsap from 'gsap';
+import React from 'react';
 
 interface FeatureItem {
   title: string;
@@ -9,8 +8,7 @@ interface FeatureItem {
 }
 
 const FeaturesSection: React.FC = () => {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const cardsRef = useRef<HTMLDivElement>(null);
+
 
   const features: FeatureItem[] = [
     {
@@ -82,30 +80,10 @@ const FeaturesSection: React.FC = () => {
     },
   ];
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && cardsRef.current) {
-            gsap.from(Array.from(cardsRef.current.children), {
-              opacity: 0,
-              y: 20,
-              duration: 0.55,
-              stagger: 0.07,
-              ease: 'power2.out',
-            });
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-    if (sectionRef.current) observer.observe(sectionRef.current);
-    return () => observer.disconnect();
-  }, []);
+
 
   return (
-    <section id="features" ref={sectionRef} className="py-16 lg:py-24 px-6 lg:px-8 max-w-7xl mx-auto">
+    <section id="features" className="py-16 lg:py-24 px-6 lg:px-8 max-w-7xl mx-auto">
       {/* Section Header */}
       <div className="text-center max-w-2xl mx-auto mb-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-xs font-mono font-medium text-indigo-400 mb-4">
@@ -120,10 +98,7 @@ const FeaturesSection: React.FC = () => {
       </div>
 
       {/* 3×2 Feature Cards Grid */}
-      <div
-        ref={cardsRef}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {features.map((item, idx) => (
           <article
             key={idx}
