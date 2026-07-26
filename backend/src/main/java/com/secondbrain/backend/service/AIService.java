@@ -57,7 +57,8 @@ public class AIService {
 
         if (geminiApiKey == null || geminiApiKey.trim().isEmpty()) {
             logger.warn("GEMINI_API_KEY is not configured.");
-            return generateLocalFallback(prompt, recentNotes, dbOnline, "[System Notice]: Gemini API Key is not configured. Set GEMINI_API_KEY environment variable to enable AI generation.");
+            return generateLocalFallback(prompt, recentNotes, dbOnline, 
+                "[System Notice]: Gemini API Key is not configured. Set GEMINI_API_KEY environment variable to enable AI generation.");
         }
 
         String maskedKey = geminiApiKey.length() > 8 
@@ -85,31 +86,32 @@ public class AIService {
                     lastSuccessfulAiRequestTime = Instant.now().toString();
                     return "[Gemini AI]\n\n" + result;
                 }
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                logger.error("Gemini 429 Quota Exceeded (Attempt {}): {}", attempt, e.getResponseBodyAsString());
+                return generateLocalFallback(prompt, recentNotes, dbOnline, 
+                    "[System Notice]: Gemini AI is temporarily unavailable because the API quota for this project has been exceeded. Please try again later or update the configured API key.");
+            } catch (HttpClientErrorException.Forbidden | HttpClientErrorException.Unauthorized e) {
+                logger.error("Gemini Auth Error (Attempt {}): {}", attempt, e.getResponseBodyAsString());
+                return generateLocalFallback(prompt, recentNotes, dbOnline, 
+                    "[System Notice]: Invalid Gemini API Key or permission denied in Google AI Studio.");
+            } catch (HttpClientErrorException.NotFound e) {
+                logger.error("Gemini Model Not Found (Attempt {}): {}", attempt, e.getResponseBodyAsString());
+                return generateLocalFallback(prompt, recentNotes, dbOnline, 
+                    "[System Notice]: Configured Gemini model ('" + geminiModel + "') is unavailable.");
             } catch (HttpClientErrorException e) {
-                logger.error("Gemini API Error (Status {}): {}", e.getStatusCode(), e.getResponseBodyAsString());
-                String responseBody = e.getResponseBodyAsString();
-                String detailedMsg = e.getStatusText();
-                if (responseBody != null && responseBody.contains("\"message\":")) {
-                    try {
-                        int idx = responseBody.indexOf("\"message\":");
-                        int start = responseBody.indexOf("\"", idx + 10) + 1;
-                        int end = responseBody.indexOf("\"", start);
-                        if (start > 0 && end > start) {
-                            detailedMsg = responseBody.substring(start, end).replace("\\n", " ");
-                        }
-                    } catch (Exception ex) {
-                        detailedMsg = e.getResponseBodyAsString();
-                    }
-                }
-                return generateLocalFallback(prompt, recentNotes, dbOnline, "[System Notice]: Gemini API Error (" + e.getStatusCode().value() + "): " + detailedMsg);
+                logger.error("Gemini API Client Error (Status {}): {}", e.getStatusCode(), e.getResponseBodyAsString());
+                return generateLocalFallback(prompt, recentNotes, dbOnline, 
+                    "[System Notice]: Gemini AI request failed (" + e.getStatusCode().value() + ").");
             } catch (ResourceAccessException | HttpServerErrorException e) {
-                logger.warn("Transient error on attempt {}/2: {}", attempt, e.getMessage());
+                logger.warn("Transient Gemini network error on attempt {}/2: {}", attempt, e.getMessage());
                 if (attempt == 2) {
-                    return generateLocalFallback(prompt, recentNotes, dbOnline, "[System Notice]: Network timeout connecting to Gemini API endpoint.");
+                    return generateLocalFallback(prompt, recentNotes, dbOnline, 
+                        "[System Notice]: Network timeout connecting to Gemini API endpoint.");
                 }
             } catch (Exception e) {
                 logger.error("Unexpected error calling Gemini API: {}", e.getMessage(), e);
-                return generateLocalFallback(prompt, recentNotes, dbOnline, "[System Notice]: Backend error: " + e.getMessage());
+                return generateLocalFallback(prompt, recentNotes, dbOnline, 
+                    "[System Notice]: Backend exception: " + e.getMessage());
             }
         }
 
@@ -160,14 +162,14 @@ public class AIService {
 
     private String generateLocalFallback(String prompt, List<Note> recentNotes, boolean dbOnline, String notice) {
         if (!dbOnline) {
-            return notice + "\n\n[Database Status]: Knowledge Graph (Neo4j) is currently offline at " + (neo4jUri != null && !neo4jUri.isEmpty() ? neo4jUri : "unconfigured endpoint") + ".";
+            return notice + "\n\n[Knowledge Substrate]: Database offline.";
         }
         if (recentNotes != null && !recentNotes.isEmpty()) {
             Note topNote = recentNotes.get(0);
-            return notice + "\n\n[Knowledge Substrate]: Retrieved stored note ('" + topNote.getTitle() + "'):\n\"" 
+            return notice + "\n\n[Knowledge Substrate]: Grounded in stored note ('" + topNote.getTitle() + "'):\n\"" 
                 + (topNote.getContent() != null ? topNote.getContent().substring(0, Math.min(220, topNote.getContent().length())) : "") 
                 + "...\"";
         }
-        return notice + "\n\n[Knowledge Substrate]: 0 note nodes stored in your knowledge base.";
+        return notice;
     }
 }
