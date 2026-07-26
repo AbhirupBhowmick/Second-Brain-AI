@@ -132,20 +132,26 @@ export const Auth: React.FC = () => {
     onSuccess: async (tokenResponse) => {
       setLoading(true);
       setError('');
+      console.log('Google Auth Response:', tokenResponse);
       try {
+        const accessToken = tokenResponse.access_token;
         const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
-          token: tokenResponse.access_token,
+          token: accessToken,
         });
         login(res.data);
         setSuccess(true);
         setTimeout(() => navigate('/dashboard'), 900);
-      } catch {
+      } catch (err) {
+        console.error('Google Auth Error:', err);
         setError('Google authentication failed. Please try again.');
       } finally {
         setLoading(false);
       }
     },
-    onError: () => setError('Google sign-in was cancelled or blocked.'),
+    onError: (err) => {
+      console.error('Google Login Error:', err);
+      setError('Google sign-in was cancelled or blocked.');
+    },
   });
 
   // ─── Email / Password submit ─────────────────────────────────────────────────
