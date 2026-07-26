@@ -9,6 +9,7 @@ interface SystemHealthData {
   neo4j?: {
     status: string;
     connected: boolean;
+    connectionType?: string;
     nodeCount?: number;
     error?: string;
   };
@@ -129,10 +130,12 @@ export const Settings = () => {
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-zinc-500 font-mono">URI: bolt://localhost:7687</p>
+                  <p className="text-[10px] text-zinc-500 font-mono">
+                    URI: {healthData?.neo4j?.connectionType === 'AuraDB' ? 'neo4j+s://bed281a1.databases.neo4j.io' : 'bolt://localhost:7687'}
+                  </p>
                   <p className="text-[10px] text-zinc-500 font-mono">
                     {healthData?.neo4j?.connected
-                      ? `${healthData.neo4j.nodeCount} Notes Stored`
+                      ? `${healthData.neo4j.nodeCount} Notes Stored (${healthData.neo4j.connectionType})`
                       : 'Knowledge Graph Offline'}
                   </p>
                 </div>
@@ -151,7 +154,7 @@ export const Settings = () => {
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-zinc-500 font-mono">Model: {healthData?.gemini?.model || 'gemini-2.0-flash'}</p>
+                  <p className="text-[10px] text-zinc-500 font-mono">Model: {healthData?.gemini?.model || 'gemini-2.5-flash'}</p>
                   <p className="text-[10px] text-zinc-500 font-mono">
                     {healthData?.gemini?.lastSuccessfulAiRequestTime
                       ? `Last Request: ${new Date(healthData.gemini.lastSuccessfulAiRequestTime).toLocaleTimeString()}`
@@ -186,7 +189,7 @@ export const Settings = () => {
               <p className="text-zinc-500"># Environment Key Injection:</p>
               <p className="text-indigo-300">GEMINI_API_KEY=•••••••• (Loaded from Environment)</p>
               <p className="text-zinc-500 pt-1"># Official REST Endpoint:</p>
-              <p className="text-emerald-400">https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash</p>
+              <p className="text-emerald-400">https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash</p>
             </div>
           </section>
 
