@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout';
 import axios from 'axios';
+import { getApiUrl } from '../config/api';
 
 interface SystemHealthData {
   status: string;
@@ -18,6 +19,7 @@ interface SystemHealthData {
     apiKeyLoaded: boolean;
     model: string;
     lastSuccessfulAiRequestTime?: string | null;
+    lastAiError?: string | null;
     message?: string;
   };
 }
@@ -32,11 +34,11 @@ export const Settings = () => {
     setHealthLoading(true);
     setHealthError(null);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || '';
-      const res = await axios.get(`${baseUrl}/api/health`);
+      const res = await axios.get(getApiUrl('/api/health'));
       setHealthData(res.data);
     } catch (err: any) {
-      setHealthError('Unable to reach backend health endpoint at http://localhost:8080/api/health');
+      const msg = err.response?.data?.message || err.message || 'Unable to reach backend health endpoint.';
+      setHealthError(`Health Audit Notice: ${msg}`);
     } finally {
       setHealthLoading(false);
     }

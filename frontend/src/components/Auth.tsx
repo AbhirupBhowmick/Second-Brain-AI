@@ -6,9 +6,7 @@ import gsap from 'gsap';
 import AuthVisualization from './auth/AuthVisualization';
 import LoginForm from './auth/LoginForm';
 import SignupForm from './auth/SignupForm';
-
-const API_URL = import.meta.env.VITE_API_URL || "";
-const baseUrl = API_URL.replace(/\/+$/, "");
+import { getApiUrl } from '../config/api';
 
 // ─── Subtle background: tiny animated dots on dark graphite ───────────────────
 const AuthBackground: React.FC = () => {
@@ -143,21 +141,13 @@ export const Auth: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      if (baseUrl) {
-        const response = await axios.post(`${baseUrl}/api/auth/login`, {
-          email,
-          password,
-        });
-        login(response.data, { email });
-        setSuccess(true);
-        setTimeout(() => navigate('/dashboard'), 600);
-      } else {
-        // If backend URL is not configured or unavailable, gracefully fall back to Demo Mode
-        console.warn('Backend URL unavailable, logging in as Guest user.');
-        loginAsGuest();
-        setSuccess(true);
-        setTimeout(() => navigate('/dashboard'), 600);
-      }
+      const response = await axios.post(getApiUrl('/api/auth/login'), {
+        email,
+        password,
+      });
+      login(response.data, { email });
+      setSuccess(true);
+      setTimeout(() => navigate('/dashboard'), 600);
     } catch (err: any) {
       if (err.response?.status === 401 || err.response?.status === 404) {
         setError('Incorrect email or password. Please try again.');
@@ -177,19 +167,13 @@ export const Auth: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      if (baseUrl) {
-        await axios.post(`${baseUrl}/api/auth/register`, {
-          email,
-          password,
-          fullName,
-        });
-        setError('Account created! Please sign in.');
-        switchView(true);
-      } else {
-        loginAsGuest();
-        setSuccess(true);
-        setTimeout(() => navigate('/dashboard'), 600);
-      }
+      await axios.post(getApiUrl('/api/auth/register'), {
+        email,
+        password,
+        fullName,
+      });
+      setError('Account created! Please sign in.');
+      switchView(true);
     } catch (err: any) {
       const msg = err.response?.data;
       if (err.response?.status === 409) {

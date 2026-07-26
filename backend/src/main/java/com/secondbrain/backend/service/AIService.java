@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
@@ -42,9 +43,14 @@ public class AIService {
     private NoteRepository noteRepository;
 
     private static String lastSuccessfulAiRequestTime = null;
+    private static String lastAiError = null;
 
     public String getLastSuccessfulAiRequestTime() {
         return lastSuccessfulAiRequestTime;
+    }
+
+    public String getLastAiError() {
+        return lastAiError;
     }
 
     public String getChatResponse(String prompt) {
@@ -59,6 +65,7 @@ public class AIService {
 
         if (geminiApiKey == null || geminiApiKey.trim().isEmpty()) {
             logger.error("GEMINI_API_KEY is not configured.");
+            lastAiError = "Gemini API Key is not configured (HTTP 400 Bad Request).";
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
                 "Gemini API Key is not configured. Set GEMINI_API_KEY environment variable to enable AI generation.");
         }
@@ -73,67 +80,102 @@ public class AIService {
             "System Context: You are the 'Second Brain AI' Assistant. Ground your answer in the user's personal knowledge substrate below:\n\nKNOWLEDGE SUBSTRATE:\n"
         );
 
-        for (Note note : recentNotes) {
-            contextBuilder.append("- Title: ").append(note.getTitle() != null ? note.getTitle() : "Untitled")
-                          .append(" | Content: ").append(note.getContent() != null ? note.getContent() : "").append("\n");
+        if (dbOnline && recentNotes != null && !recentNotes.isEmpty()) {
+            for (Note note : recentNotes) {
+                if (note == null) continue;
+                contextBuilder.append("- Title: ").append(note.getTitle() != null ? note.getTitle() : "Untitled")
+                              .append(" | Content: ").append(note.getContent() != null ? note.getContent() : "").append("\n");
+            }
+        } else {
+            contextBuilder.append("[Note substrate notice: Database is currently offline for maintenance]\n");
         }
 
-        contextBuilder.append("\nUSER QUESTION: ").append(prompt);
+        contextBuilder.append("\nUSER QUESTION: ").append(prompt != null ? prompt : "");
         String finalPrompt = contextBuilder.toString();
 
-        // Model candidates targeting gemini-3.1-flash-lite with failover to gemini-flash-lite-latest & gemini-flash-latest
-        String[] modelCandidates = new String[] { geminiModel, "gemini-flash-lite-latest", "gemini-flash-latest" };
+        List<String> modelCandidates = new ArrayList<>();
+        if (geminiModel != null && !geminiModel.trim().isEmpty()) {
+            modelCandidates.add(geminiModel.trim());
+        }
+        for (String fallback : new String[] { "gemini-3.1-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro" }) {
+            if (!modelCandidates.contains(fallback)) {
+                modelCandidates.add(fallback);
+            }
+        }
 
-        for (String currentModel : modelCandidates) {
+        for (int i = 0; i < modelCandidates.size(); i++) {
+            String currentModel = modelCandidates.get(i);
+            boolean isLastCandidate = (i == modelCandidates.size() - 1);
             try {
                 logger.info("Attempting Gemini request using model candidate: {}", currentModel);
                 String result = executeGeminiRequest(finalPrompt, currentModel);
                 if (result != null && !result.trim().isEmpty()) {
                     lastSuccessfulAiRequestTime = Instant.now().toString();
+                    lastAiError = null;
                     logger.info("Successfully received Gemini response using model: {}", currentModel);
                     return "[Gemini AI]\n\n" + result;
                 }
             } catch (HttpClientErrorException.TooManyRequests e) {
                 logger.warn("Gemini 429 Quota Exceeded for model {}: {}", currentModel, e.getResponseBodyAsString());
-                if (!"gemini-flash-latest".equals(currentModel)) {
-                    continue; // Failover to next candidate
-                }
+                if (!isLastCandidate) continue;
+                lastAiError = "Gemini AI quota exceeded (HTTP 429).";
                 throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, 
                     "Gemini AI quota exceeded. Please try again later or verify project rate limits.");
             } catch (HttpClientErrorException.NotFound e) {
                 logger.warn("Gemini Model Not Found for model {}: {}", currentModel, e.getResponseBodyAsString());
-                if (!"gemini-flash-latest".equals(currentModel)) {
-                    continue; // Failover to next candidate
-                }
+                if (!isLastCandidate) continue;
+                lastAiError = "Configured Gemini model ('" + currentModel + "') is unavailable (HTTP 404).";
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, 
                     "Configured Gemini model ('" + currentModel + "') is unavailable.");
             } catch (HttpClientErrorException.Forbidden | HttpClientErrorException.Unauthorized e) {
                 logger.error("Gemini Auth Error for model {}: {}", currentModel, e.getResponseBodyAsString());
+                lastAiError = "Invalid Gemini API Key or permission denied (HTTP 401).";
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, 
                     "Invalid Gemini API Key or permission denied in Google AI Studio.");
             } catch (HttpClientErrorException e) {
                 logger.error("Gemini API Client Error (Status {}): {}", e.getStatusCode(), e.getResponseBodyAsString());
+                if (!isLastCandidate) continue;
+                lastAiError = "Gemini API client request failed (HTTP " + e.getStatusCode().value() + ").";
                 throw new ResponseStatusException(HttpStatus.valueOf(e.getStatusCode().value()), 
                     "Gemini API request failed (" + e.getStatusCode().value() + ").");
-            } catch (ResourceAccessException | HttpServerErrorException e) {
-                logger.warn("Transient Gemini network error for model {}: {}", currentModel, e.getMessage());
+            } catch (ResourceAccessException e) {
+                logger.warn("Gemini connection timeout/network error for model {}: {}", currentModel, e.getMessage());
+                if (!isLastCandidate) continue;
+                lastAiError = "Gemini API connection timed out (HTTP 504).";
+                throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, 
+                    "Gemini API connection timed out. Please check network connectivity.");
+            } catch (HttpServerErrorException e) {
+                logger.warn("Gemini server error for model {}: {}", currentModel, e.getMessage());
+                if (!isLastCandidate) continue;
+                lastAiError = "Gemini remote server error (HTTP 502).";
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, 
+                    "Gemini AI remote server encountered an error (HTTP " + e.getStatusCode().value() + ").");
             } catch (ResponseStatusException e) {
+                lastAiError = e.getReason();
                 throw e;
             } catch (Exception e) {
                 logger.error("Unexpected error calling Gemini API: {}", e.getMessage(), e);
+                if (!isLastCandidate) continue;
+                lastAiError = "Backend AI exception: " + e.getMessage();
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
                     "Backend AI exception: " + e.getMessage());
             }
         }
 
+        lastAiError = "Gemini API service unavailable across all model candidates.";
         throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Gemini API service unavailable.");
     }
 
+    @SuppressWarnings("unchecked")
     private String executeGeminiRequest(String promptText, String modelName) {
         String baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent";
         String url = baseUrl + "?key=" + geminiApiKey;
 
-        RestTemplate restTemplate = new RestTemplate();
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(5000);
+        requestFactory.setReadTimeout(15000);
+
+        RestTemplate restTemplate = new RestTemplate(requestFactory);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -144,7 +186,7 @@ public class AIService {
         contentObj.put("parts", List.of(textPart));
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("contents", List.of(requestBody.size() > 0 ? List.of(contentObj) : List.of(contentObj)));
+        requestBody.put("contents", List.of(contentObj));
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
@@ -154,20 +196,30 @@ public class AIService {
         Map<String, Object> responseBody = response.getBody();
 
         if (responseBody != null && responseBody.containsKey("candidates")) {
-            List<Map<String, Object>> candidates = (List<Map<String, Object>>) responseBody.get("candidates");
+            List<?> candidates = (List<?>) responseBody.get("candidates");
             if (candidates != null && !candidates.isEmpty()) {
-                Map<String, Object> candidate = candidates.get(0);
+                Map<String, Object> candidate = (Map<String, Object>) candidates.get(0);
+                String finishReason = candidate.get("finishReason") != null ? candidate.get("finishReason").toString() : "";
+                if ("SAFETY".equalsIgnoreCase(finishReason) || "RECITATION".equalsIgnoreCase(finishReason)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, 
+                        "Gemini API blocked response due to safety filter (" + finishReason + ").");
+                }
+
                 Map<String, Object> contentRes = (Map<String, Object>) candidate.get("content");
                 if (contentRes != null && contentRes.containsKey("parts")) {
-                    List<Map<String, Object>> resParts = (List<Map<String, Object>>) contentRes.get("parts");
+                    List<?> resParts = (List<?>) contentRes.get("parts");
                     if (resParts != null && !resParts.isEmpty()) {
-                        String reply = (String) resParts.get(0).get("text");
-                        logger.info("Received response from Gemini API (Length: {} chars)", reply != null ? reply.length() : 0);
-                        return reply;
+                        Map<String, Object> part = (Map<String, Object>) resParts.get(0);
+                        String reply = part.get("text") != null ? part.get("text").toString() : null;
+                        if (reply != null && !reply.trim().isEmpty()) {
+                            logger.info("Received response from Gemini API (Length: {} chars)", reply.length());
+                            return reply;
+                        }
                     }
                 }
             }
         }
-        return null;
+
+        throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Received empty or unparseable response from Gemini API.");
     }
 }

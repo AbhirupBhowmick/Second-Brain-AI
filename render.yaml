@@ -1,18 +1,24 @@
 services:
   - type: web
-    name: Second-Brain-AI
+    name: Second-Brain-AI-Backend
     runtime: java
     rootDir: backend
     buildCommand: ./mvnw clean package -DskipTests
     startCommand: java -jar target/*.jar
     envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.1-flash-lite
       - key: NEO4J_URI
         sync: false
       - key: NEO4J_USERNAME
         sync: false
       - key: NEO4J_PASSWORD
         sync: false
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: GEMINI_MODEL
-        value: gemini-3.1-flash-lite
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION_MS
+        value: "86400000"
+      - key: SERVER_PORT
+        value: "8080"

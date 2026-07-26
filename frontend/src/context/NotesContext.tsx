@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { getApiUrl } from '../config/api';
 
 export interface NoteItem {
   id: string;
@@ -194,14 +195,8 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const refetchNotes = async () => {
     setIsLoading(true);
     setError(null);
-    const baseUrl = import.meta.env.VITE_API_URL || '';
-    if (!baseUrl) {
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const res = await axios.get(`${baseUrl}/api/notes`);
+      const res = await axios.get(getApiUrl('/api/notes'));
       if (Array.isArray(res.data) && res.data.length > 0) {
         const mapped: NoteItem[] = res.data.map((item: any) => ({
           id: String(item.id),
@@ -241,9 +236,8 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const generateAiSummary = async (content: string): Promise<string> => {
     if (!content.trim()) return 'No content to summarize.';
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
     try {
-      const res = await axios.post(`${baseUrl}/api/chat`, {
+      const res = await axios.post(getApiUrl('/api/chat'), {
         prompt: `Summarize the following note concisely in 2 sentences:\n\n${content}`,
       });
       if (res.data?.reply) return res.data.reply;
@@ -252,7 +246,8 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     const clean = content.replace(/[#*`\-[\]]/g, '').trim();
     const sentences = clean.split(/(?<=[.!?])\s+/).filter(Boolean);
-    return sentences.slice(0, 2).join(' ') || clean.slice(0, 140);
+    const fallbackText = sentences.slice(0, 2).join(' ') || clean.slice(0, 140);
+    return `[Local Extractive Summary (Fallback)]: ${fallbackText}`;
   };
 
   const generateAiTags = async (content: string, title: string = ''): Promise<string[]> => {
@@ -284,22 +279,19 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setNotes((prev) => [newNote, ...prev]);
     addActivity('Created note', newTitle);
 
-    const baseUrl = import.meta.env.VITE_API_URL || '';
-    if (baseUrl) {
-      try {
-        const res = await axios.post(`${baseUrl}/api/notes`, {
-          title: newNote.title,
-          content: newNote.content,
-          collectionId: newNote.collectionId,
-        });
-        if (res.data?.id) {
-          setNotes((prev) =>
-            prev.map((n) => (n.id === newNote.id ? { ...n, id: String(res.data.id) } : n))
-          );
-        }
-      } catch (err) {
-        console.warn('Backend sync note creation notice:', err);
+    try {
+      const res = await axios.post(getApiUrl('/api/notes'), {
+        title: newNote.title,
+        content: newNote.content,
+        collectionId: newNote.collectionId,
+      });
+      if (res.data?.id) {
+        setNotes((prev) =>
+          prev.map((n) => (n.id === newNote.id ? { ...n, id: String(res.data.id) } : n))
+        );
       }
+    } catch (err) {
+      console.warn('Backend sync note creation notice:', err);
     }
 
     return newNote;
@@ -325,10 +317,9 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addActivity('Updated note', updatedTitle);
     }
 
-    const baseUrl = import.meta.env.VITE_API_URL || '';
-    if (baseUrl && !id.startsWith('note_')) {
+    if (!id.startsWith('note_')) {
       try {
-        await axios.put(`${baseUrl}/api/notes/${id}`, {
+        await axios.put(getApiUrl(`/api/notes/${id}`), {
           title: partialNote.title,
           content: partialNote.content,
           collectionId: partialNote.collectionId,
@@ -347,10 +338,9 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setNotes((prev) => prev.filter((n) => n.id !== id));
     if (selectedNoteId === id) setSelectedNoteId(null);
 
-    const baseUrl = import.meta.env.VITE_API_URL || '';
-    if (baseUrl && !id.startsWith('note_')) {
+    if (!id.startsWith('note_')) {
       try {
-        await axios.delete(`${baseUrl}/api/notes/${id}`);
+        await axios.delete(getApiUrl(`/api/notes/${id}`));
       } catch (err) {
         console.warn('Backend sync note deletion notice:', err);
       }
