@@ -7,7 +7,11 @@ import gsap from 'gsap';
 import AuthVisualization from './auth/AuthVisualization';
 import LoginForm from './auth/LoginForm';
 import SignupForm from './auth/SignupForm';
-
+// Environment variables
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+if (!GOOGLE_CLIENT_ID) { console.error('Google Client ID not set in VITE_GOOGLE_CLIENT_ID'); }
+const API_URL = import.meta.env.VITE_API_URL || "";
+const baseUrl = API_URL.replace(/\/+$/, "");
 // ─── Subtle background: tiny animated dots on dark graphite ───────────────────
 const AuthBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -135,7 +139,7 @@ export const Auth: React.FC = () => {
       console.log('Google Auth Response:', tokenResponse);
       try {
         const accessToken = tokenResponse.access_token;
-        const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
+        const res = await axios.post(`${baseUrl}/api/auth/google`, {
           token: accessToken,
         });
         login(res.data);
@@ -149,6 +153,8 @@ export const Auth: React.FC = () => {
       }
     },
     onError: (err) => {
+      const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+      if (!GOOGLE_CLIENT_ID) { console.error('Google Client ID not set in VITE_GOOGLE_CLIENT_ID'); }
       console.error('Google Login Error:', err);
       setError('Google sign-in was cancelled or blocked.');
     },
@@ -159,7 +165,7 @@ export const Auth: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      const response = await axios.post(`${baseUrl}/api/auth/login`, {
         email,
         password,
       });
@@ -186,7 +192,7 @@ export const Auth: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+      await axios.post(`${baseUrl}/api/auth/register`, {
         email,
         password,
       });
