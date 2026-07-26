@@ -43,6 +43,17 @@ export const CommandPalette: React.FC = () => {
       },
     },
     {
+      id: 'action-assistant',
+      title: 'AI Knowledge Assistant (Flagship)',
+      category: 'AI Feature',
+      icon: 'psychology',
+      shortcut: 'A',
+      handler: () => {
+        navigate('/assistant');
+        setIsCommandPaletteOpen(false);
+      },
+    },
+    {
       id: 'action-graph',
       title: 'Explore Knowledge Graph',
       category: 'Navigation',

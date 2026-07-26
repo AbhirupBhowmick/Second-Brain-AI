@@ -50,6 +50,7 @@ const Sidebar: React.FC = () => {
 
   const navItems = [
     { name: 'Dashboard', icon: 'grid_view', path: '/dashboard' },
+    { name: 'Knowledge Assistant', icon: 'psychology', path: '/assistant', badge: 'AI' },
     { name: 'Knowledge Graph', icon: 'hub', path: '/map' },
     { name: 'AI Chat', icon: 'smart_toy', path: '/chat' },
     { name: 'Notes', icon: 'description', path: '/notes', count: notes.length },
@@ -143,6 +144,11 @@ const Sidebar: React.FC = () => {
                     </span>
                     <span className="text-xs tracking-wide">{item.name}</span>
                   </div>
+                  {item.badge && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold">
+                      {item.badge}
+                    </span>
+                  )}
                   {item.count !== undefined && item.count > 0 && (
                     <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
                       {item.count}

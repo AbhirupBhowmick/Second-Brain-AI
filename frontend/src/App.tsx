@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
+import KnowledgeAssistant from './components/KnowledgeAssistant';
 import Editor from './components/Editor';
 import Graph from './components/Graph';
 import Chat from './components/Chat';
@@ -33,6 +34,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/assistant" 
+                  element={
+                    <ProtectedRoute>
+                      <KnowledgeAssistant />
                     </ProtectedRoute>
                   } 
                 />
