@@ -2,11 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import gsap from 'gsap';
 import { useGoogleLogin } from '@react-oauth/google';
+import gsap from 'gsap';
+import AuthVisualization from './auth/AuthVisualization';
+import LoginForm from './auth/LoginForm';
+import SignupForm from './auth/SignupForm';
 
-const NeuralBackground = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+// ─── Subtle background: tiny animated dots on dark graphite ───────────────────
+const AuthBackground: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -14,257 +18,253 @@ const NeuralBackground = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let particles: { x: number; y: number; vx: number; vy: number; size: number }[] = [];
-    const particleCount = 40;
-
+    let animId: number;
     const resize = () => {
-      canvas.width = window.innerWidth / 2;
+      canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-
-    const createParticles = () => {
-      particles = [];
-      for (let i = 0; i < particleCount; i++) {
-        particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          size: Math.random() * 2 + 1
-        });
-      }
-    };
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.1)';
-
-      particles.forEach((p, i) => {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 150) {
-            ctx.beginPath();
-            ctx.lineWidth = 1 - dist / 150;
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
-        }
-      });
-      requestAnimationFrame(animate);
-    };
-
-    window.addEventListener('resize', resize);
     resize();
-    createParticles();
-    animate();
+    window.addEventListener('resize', resize);
 
-    return () => window.removeEventListener('resize', resize);
+    const dots: { x: number; y: number; vx: number; vy: number; r: number }[] = [];
+    for (let i = 0; i < 45; i++) {
+      dots.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        r: Math.random() * 1.2 + 0.4,
+      });
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      dots.forEach((d) => {
+        d.x += d.vx;
+        d.y += d.vy;
+        if (d.x < 0 || d.x > canvas.width) d.vx *= -1;
+        if (d.y < 0 || d.y > canvas.height) d.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fill();
+      });
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animId);
+    };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 z-0 opacity-40 pointer-events-none" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-none z-0"
+      aria-hidden="true"
+    />
+  );
 };
 
-export const Auth = () => {
+// ─── Success Overlay ──────────────────────────────────────────────────────────
+const SuccessOverlay: React.FC = () => (
+  <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#09090b]/80 backdrop-blur-sm animate-in fade-in duration-400">
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center animate-in zoom-in-75 duration-300">
+        <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <p className="text-sm font-medium text-zinc-300">Entering your workspace…</p>
+    </div>
+  </div>
+);
+
+// ─── Main Auth Component ───────────────────────────────────────────────────────
+export const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  
-  const brainRef = useRef<HTMLImageElement>(null);
-  const sideRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
+  // Entrance animation for auth card
   useEffect(() => {
-    if (brainRef.current) {
-      gsap.to(brainRef.current, {
-        y: -30,
-        duration: 3,
-        repeat: -1,
-        yoyo: true,
-        ease: "power1.inOut"
-      });
-
-      gsap.to(brainRef.current, {
-        rotateY: 20,
-        rotateX: 10,
-        duration: 5,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut"
-      });
+    if (cardRef.current) {
+      gsap.fromTo(
+        cardRef.current,
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
+      );
     }
   }, []);
 
+  // Animate card when switching between login/signup
+  const switchView = (toLogin: boolean) => {
+    if (cardRef.current) {
+      gsap.to(cardRef.current, {
+        opacity: 0,
+        y: 12,
+        duration: 0.18,
+        ease: 'power2.in',
+        onComplete: () => {
+          setIsLogin(toLogin);
+          setError('');
+          gsap.fromTo(
+            cardRef.current,
+            { opacity: 0, y: 16 },
+            { opacity: 1, y: 0, duration: 0.3, ease: 'power3.out' }
+          );
+        },
+      });
+    } else {
+      setIsLogin(toLogin);
+      setError('');
+    }
+  };
+
+  // ─── Google OAuth ────────────────────────────────────────────────────────────
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setLoading(true);
+      setError('');
       try {
         const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
-          token: tokenResponse.access_token
+          token: tokenResponse.access_token,
         });
         login(res.data);
-        navigate('/dashboard');
-      } catch (err: any) {
+        setSuccess(true);
+        setTimeout(() => navigate('/dashboard'), 900);
+      } catch {
         setError('Google authentication failed. Please try again.');
       } finally {
         setLoading(false);
       }
     },
-    onError: () => setError('Google login was interrupted.')
+    onError: () => setError('Google sign-in was cancelled or blocked.'),
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // ─── Email / Password submit ─────────────────────────────────────────────────
+  const handleLogin = async (email: string, password: string) => {
     setLoading(true);
     setError('');
-    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}${endpoint}`, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         email,
-        password
+        password,
       });
-      if (isLogin) {
-        login(response.data);
-        navigate('/dashboard');
-      } else {
-        setIsLogin(true);
-        setError('Account created! Please sign in.');
-      }
+      login(response.data);
+      setSuccess(true);
+      setTimeout(() => navigate('/dashboard'), 900);
     } catch (err: any) {
-      setError(err.response?.data || 'Operation failed. Server may be starting.');
+      const msg = err.response?.data;
+      if (err.response?.status === 401) {
+        setError('Incorrect email or password. Please try again.');
+      } else if (err.response?.status === 404) {
+        setError('No account found with that email address.');
+      } else if (!err.response) {
+        setError('Network error — the server may be starting. Try again shortly.');
+      } else {
+        setError(msg || 'Sign-in failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignup = async (email: string, password: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+        email,
+        password,
+      });
+      setError('Account created! Please sign in.');
+      switchView(true);
+    } catch (err: any) {
+      const msg = err.response?.data;
+      if (err.response?.status === 409) {
+        setError('An account with this email already exists.');
+      } else if (!err.response) {
+        setError('Network error — the server may be starting. Try again shortly.');
+      } else {
+        setError(msg || 'Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#05080f] overflow-hidden font-body selection:bg-primary/30">
-      <div className="flex flex-col lg:flex-row w-full min-h-screen relative overflow-y-auto">
-        <div ref={sideRef} className="w-full lg:w-1/2 min-h-[500px] lg:min-h-screen relative flex flex-col p-12 overflow-hidden border-b lg:border-b-0 lg:border-r border-white/5 bg-[#05080f] perspective-1000">
-          <NeuralBackground />
-          <div className="relative z-20">
-            <div className="flex items-center gap-3 mb-4 group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:shadow-[0_0_20px_rgba(56,189,248,0.2)] transition-all">
-                <span className="material-symbols-outlined text-primary text-2xl">hub</span>
-              </div>
-              <span className="font-headline font-bold text-2xl tracking-wider text-white">Second Brain AI</span>
-            </div>
+    <div className="relative min-h-screen w-full bg-[#09090b] overflow-hidden flex selection:bg-indigo-500/30 selection:text-indigo-200">
+      {/* Subtle animated dots background (mobile always, desktop on right side) */}
+      <AuthBackground />
+
+      {/* Subtle grid overlay */}
+      <div className="absolute inset-0 subtle-grid-bg opacity-25 pointer-events-none z-0" />
+
+      {/* ─── Left Visualization Panel (desktop only, 60%) ──────────────────── */}
+      <AuthVisualization />
+
+      {/* ─── Right Auth Panel (40% desktop, full on mobile) ───────────────── */}
+      <div className="relative z-10 flex flex-col items-center justify-center w-full lg:w-[42%] xl:w-[40%] min-h-screen px-6 sm:px-10 py-16">
+        {/* Mobile logo (hidden on desktop where left panel shows it) */}
+        <div className="flex lg:hidden items-center gap-3 mb-10">
+          <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center">
+            <svg
+              className="w-5 h-5 text-indigo-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 3a9 9 0 0 0-9 9" />
+              <path d="M21 12a9 9 0 0 0-9-9" />
+              <path d="M12 21a9 9 0 0 0 9-9" />
+            </svg>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center relative z-10">
-            <div className="w-full max-w-xl aspect-square relative flex items-center justify-center">
-              <div className="absolute w-[60%] h-[60%] bg-primary/20 rounded-full blur-[120px] animate-pulse"></div>
-              <img 
-                ref={brainRef}
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuATqw2r81LwXWe9cjlyaJ0ZV3DYw-Z8Lh2GSFl0D5TlJr-W7V2mVv9SAO2iZwRH2ZFWBH3XQLyxH7z6-SBg8AesCcR8LB_L1jEscI0Rr_U85hX1olOWuwjdUqMDL8ctpuJAbbZS6yTlE8iVRiwtYtdy3Di7jwFpmR3d8lgndZsUj-_xUXQioO8gWICIAJibSH-V0_o6aQ-1BJVkNuH766owEhmDnSrh-PcZykKTO44xW4KINEQLrMKwLJKawekbbo2Gi2THtLyivRI" 
-                alt="Neural Brain" 
-                className="w-full h-full object-contain relative z-10 mix-blend-screen scale-110 contrast-[1.1] brightness-[1.1] [mask-image:radial-gradient(circle,black_50%,transparent_75%)]"
-              />
-            </div>
-            <div className="max-w-lg text-center mt-4 relative z-20">
-              <h1 className="font-headline font-bold text-5xl mb-6 text-white leading-[1.1] tracking-tight">
-                Architecting Your <br/>
-                <span className="bg-gradient-to-r from-sky-400 via-primary to-emerald-400 bg-clip-text text-transparent">Cognitive Horizon</span>
-              </h1>
-              <p className="text-slate-400 text-xl font-light leading-relaxed max-w-[90%] mx-auto">
-                A non-linear workspace that thinks with you.
-              </p>
-            </div>
-          </div>
-          <div className="relative z-20 mt-auto opacity-30 text-[10px] uppercase tracking-[0.3em] text-primary flex items-center gap-4">
-             <div className="h-px flex-1 bg-gradient-to-r from-transparent to-primary"></div>
-             Neural Synthesis Engine v1.0
-             <div className="h-px flex-1 bg-gradient-to-l from-transparent to-primary"></div>
-          </div>
+          <span className="font-display text-lg font-bold text-zinc-100 tracking-tight">
+            Second Brain <span className="text-indigo-400 font-medium">AI</span>
+          </span>
         </div>
 
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-[#05080f] relative z-20">
-          <div className="w-full max-w-md relative">
-            <div className="absolute inset-0 bg-primary/5 blur-[120px] pointer-events-none"></div>
-            <div className="glass-panel-elevated w-full rounded-[2.5rem] p-6 lg:p-10 relative z-10 border border-white/5 bg-[#0a0f1a]/40 shadow-2xl overflow-hidden">
-               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
-              <div className="text-center mb-8">
-                <h2 className="font-headline font-bold text-2xl lg:text-3xl text-white mb-3 tracking-tight">
-                  {isLogin ? 'Welcome Back' : 'Join the Nexus'}
-                </h2>
-                <p className="text-slate-400 text-sm lg:text-base font-light">
-                  {isLogin ? 'Resume your cognitive workflow' : 'Initialize your personal neural network'}
-                </p>
-              </div>
-              
-              {error && (
-                <div className={`text-sm p-4 rounded-2xl mb-8 flex items-center gap-3 animate-in fade-in zoom-in-95 duration-500 ${error.includes('created') ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
-                  <span className="material-symbols-outlined text-lg">{error.includes('created') ? 'check_circle' : 'error'}</span>
-                  {error}
-                </div>
-              )}
+        {/* Auth Card */}
+        <div
+          ref={cardRef}
+          className="relative w-full max-w-[400px] bg-zinc-900/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-8 shadow-2xl shadow-black/60"
+        >
+          {/* Success overlay */}
+          {success && <SuccessOverlay />}
 
-              <form className="space-y-6" onSubmit={handleSubmit}>
-                <div className="space-y-2 group">
-                  <label className="block text-xs uppercase tracking-widest font-semibold text-slate-500 ml-1 group-focus-within:text-primary transition-colors" htmlFor="email">Neural ID</label>
-                  <input 
-                    className="w-full px-5 py-4 bg-white/[0.02] border border-white/[0.05] rounded-2xl text-white placeholder-slate-600 focus:outline-none focus:border-primary/40 focus:bg-white/[0.04] transition-all text-base shadow-inner" 
-                    id="email" required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@neural.link"
-                  />
-                </div>
-                <div className="space-y-2 group">
-                  <label className="block text-xs uppercase tracking-widest font-semibold text-slate-500 ml-1 group-focus-within:text-primary transition-colors" htmlFor="password">Passphrase</label>
-                  <input 
-                    className="w-full px-5 py-4 bg-white/[0.02] border border-white/[0.05] rounded-2xl text-white placeholder-slate-600 focus:outline-none focus:border-primary/40 focus:bg-white/[0.04] transition-all text-base shadow-inner" 
-                    id="password" required type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                  />
-                </div>
-                <button className="w-full py-4 px-6 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary font-bold rounded-2xl transition-all flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(56,189,248,0.1)] active:scale-[0.98]" type="submit" disabled={loading}>
-                  {loading ? (
-                    <div className="w-5 h-5 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                  ) : (
-                    <>
-                      <span>{isLogin ? 'Authorize Session' : 'Create Identity'}</span>
-                      <span className="material-symbols-outlined text-xl">bolt</span>
-                    </>
-                  )}
-                </button>
-              </form>
-
-              <div className="mt-8 pt-8 border-t border-white/5 space-y-6">
-                <div className="flex flex-col items-center gap-4">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold">Or continue with</p>
-                  <button 
-                    onClick={() => googleLogin()}
-                    className="w-full py-4 px-6 bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
-                  >
-                    <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" className="w-5 h-5" alt="Google"/>
-                    <span>Google Authentication</span>
-                  </button>
-                </div>
-                <div className="text-center">
-                  <button onClick={() => setIsLogin(!isLogin)} className="text-xs uppercase tracking-widest text-slate-500 hover:text-primary font-bold transition-all">
-                    {isLogin ? 'Initialize New Account' : 'Return to Authorization'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          {isLogin ? (
+            <LoginForm
+              onSubmit={handleLogin}
+              onGoogleLogin={() => googleLogin()}
+              onSwitchToSignup={() => switchView(false)}
+              loading={loading}
+              error={error}
+            />
+          ) : (
+            <SignupForm
+              onSubmit={handleSignup}
+              onGoogleLogin={() => googleLogin()}
+              onSwitchToLogin={() => switchView(true)}
+              loading={loading}
+              error={error}
+            />
+          )}
         </div>
+
+        {/* Footer note */}
+        <p className="mt-8 text-[11px] text-zinc-600 font-mono text-center">
+          Protected by JWT authentication · Local-first encryption
+        </p>
       </div>
     </div>
   );
