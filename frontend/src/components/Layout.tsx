@@ -91,12 +91,21 @@ const NeuralBackground = () => {
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isModalOpen, closeModal } = useModal();
-  const { addNote } = useNotes();
+  const { addNote, collections, activeCollection } = useNotes();
   const navigate = useNavigate();
 
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
+  const [selectedCollection, setSelectedCollection] = useState<string>('engineering');
   const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    if (activeCollection) {
+      setSelectedCollection(activeCollection);
+    } else if (collections.length > 0) {
+      setSelectedCollection(collections[0].id);
+    }
+  }, [activeCollection, collections]);
 
   const handleCreateNote = async () => {
     if (!noteTitle.trim() && !noteContent.trim()) return;
@@ -105,6 +114,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       await addNote({
         title: noteTitle.trim() || 'Untitled Note',
         content: noteContent.trim(),
+        collectionId: selectedCollection,
       });
       setNoteTitle('');
       setNoteContent('');
@@ -151,6 +161,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 onChange={(e) => setNoteTitle(e.target.value)}
                 className="w-full px-4 py-3 bg-zinc-950 border border-white/[0.08] rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50 text-sm"
               />
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-zinc-500">Collection:</span>
+                <select
+                  value={selectedCollection}
+                  onChange={(e) => setSelectedCollection(e.target.value)}
+                  className="flex-1 px-3 py-2 bg-zinc-950 border border-white/[0.08] rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500/50 cursor-pointer"
+                >
+                  {collections.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <textarea 
                 placeholder="Write your note content..." 

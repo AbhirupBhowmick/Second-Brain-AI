@@ -7,7 +7,7 @@ export interface NoteItem {
   content: string;
   summary?: string;
   tags: string[];
-  collectionId?: string;
+  collectionId: string;
   pinned: boolean;
   createdAt: string;
   updatedAt: string;
@@ -35,6 +35,9 @@ interface NotesContextType {
   setSearchQuery: (q: string) => void;
   activeCollection: string | null;
   setActiveCollection: (id: string | null) => void;
+  addCollection: (name: string, icon?: string, color?: string) => CollectionItem;
+  updateCollection: (id: string, name: string) => void;
+  deleteCollection: (id: string) => void;
   isLoading: boolean;
   error: string | null;
   refetchNotes: () => Promise<void>;
@@ -64,6 +67,25 @@ const DEFAULT_COLLECTIONS: CollectionItem[] = [
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
 
 export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [collections, setCollections] = useState<CollectionItem[]>(() => {
+    const saved = localStorage.getItem('sb_collections_v1');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // fallback
+      }
+    }
+    return DEFAULT_COLLECTIONS;
+  });
+
+  const [activeCollection, setActiveCollectionState] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const colParam = params.get('collection');
+    if (colParam) return colParam;
+    return localStorage.getItem('sb_active_collection');
+  });
+
   const [notes, setNotes] = useState<NoteItem[]>(() => {
     const saved = localStorage.getItem('sb_notes_v2');
     if (saved) {
@@ -88,15 +110,32 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return [];
   });
 
-  const [collections] = useState<CollectionItem[]>(DEFAULT_COLLECTIONS);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCollection, setActiveCollection] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync to local storage
+  // Sync active collection to local storage and URL
+  const setActiveCollection = (colId: string | null) => {
+    setActiveCollectionState(colId);
+    if (colId) {
+      localStorage.setItem('sb_active_collection', colId);
+      const url = new URL(window.location.href);
+      url.searchParams.set('collection', colId);
+      window.history.replaceState({}, '', url.toString());
+    } else {
+      localStorage.removeItem('sb_active_collection');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('collection');
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
+  useEffect(() => {
+    localStorage.setItem('sb_collections_v1', JSON.stringify(collections));
+  }, [collections]);
+
   useEffect(() => {
     localStorage.setItem('sb_notes_v2', JSON.stringify(notes));
   }, [notes]);
@@ -115,7 +154,43 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setActivities((prev) => [newAct, ...prev.slice(0, 19)]);
   };
 
-  // Fetch real notes from backend on mount
+  const addCollection = (name: string, icon = 'folder', color = 'text-indigo-400'): CollectionItem => {
+    const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-') || 'col-' + Date.now();
+    const newCol: CollectionItem = {
+      id,
+      name,
+      icon,
+      color,
+    };
+    setCollections((prev) => [...prev, newCol]);
+    addActivity('Created collection', name);
+    return newCol;
+  };
+
+  const updateCollection = (id: string, name: string) => {
+    setCollections((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, name } : c))
+    );
+    addActivity('Updated collection', name);
+  };
+
+  const deleteCollection = (id: string) => {
+    const target = collections.find((c) => c.id === id);
+    if (target) {
+      addActivity('Deleted collection', target.name);
+    }
+    const remaining = collections.filter((c) => c.id !== id);
+    setCollections(remaining);
+    const fallbackColId = remaining[0]?.id || 'engineering';
+    // Reassign notes belonging to deleted collection
+    setNotes((prev) =>
+      prev.map((n) => (n.collectionId === id ? { ...n, collectionId: fallbackColId } : n))
+    );
+    if (activeCollection === id) {
+      setActiveCollection(null);
+    }
+  };
+
   const refetchNotes = async () => {
     setIsLoading(true);
     setError(null);
@@ -134,6 +209,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           content: item.content || '',
           summary: item.summary || '',
           tags: Array.isArray(item.tags) ? item.tags : ['general'],
+          collectionId: item.collectionId || 'engineering',
           pinned: false,
           createdAt: item.createdAt || new Date().toISOString(),
           updatedAt: item.updatedAt || new Date().toISOString(),
@@ -141,7 +217,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setNotes(mapped);
       }
     } catch (err: any) {
-      console.warn('Backend fetch notice (using local storage notes):', err.message);
+      console.warn('Backend fetch notice:', err.message);
     } finally {
       setIsLoading(false);
     }
@@ -201,7 +277,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       content: newContent,
       summary: partialNote.summary || (newContent ? newContent.slice(0, 140) : 'No content.'),
       tags: partialNote.tags || ['note'],
-      collectionId: partialNote.collectionId || 'engineering',
+      collectionId: partialNote.collectionId || activeCollection || collections[0]?.id || 'engineering',
       pinned: partialNote.pinned || false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -216,6 +292,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const res = await axios.post(`${baseUrl}/api/notes`, {
           title: newNote.title,
           content: newNote.content,
+          collectionId: newNote.collectionId,
         });
         if (res.data?.id) {
           setNotes((prev) =>
@@ -256,6 +333,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         await axios.put(`${baseUrl}/api/notes/${id}`, {
           title: partialNote.title,
           content: partialNote.content,
+          collectionId: partialNote.collectionId,
         });
       } catch (err) {
         console.warn('Backend sync note update notice:', err);
@@ -307,6 +385,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return await addNote({
       title,
       content: body,
+      collectionId: activeCollection || 'engineering',
     });
   };
 
@@ -329,8 +408,10 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const getDailySummary = (): string => {
     if (notes.length === 0) return 'No notes recorded in your knowledge substrate yet.';
-    const titles = notes.slice(0, 3).map((n) => `"${n.title}"`).join(', ');
-    return `Your brain currently indexes ${notes.length} note nodes. Top active topics: ${titles}.`;
+    const filtered = activeCollection ? notes.filter((n) => n.collectionId === activeCollection) : notes;
+    if (filtered.length === 0) return `No notes found in the active collection.`;
+    const titles = filtered.slice(0, 3).map((n) => `"${n.title}"`).join(', ');
+    return `Your brain currently indexes ${filtered.length} notes in this scope. Active topics: ${titles}.`;
   };
 
   const getStorageUsedFormatted = (): string => {
@@ -353,6 +434,9 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setSearchQuery,
         activeCollection,
         setActiveCollection,
+        addCollection,
+        updateCollection,
+        deleteCollection,
         isLoading,
         error,
         refetchNotes,

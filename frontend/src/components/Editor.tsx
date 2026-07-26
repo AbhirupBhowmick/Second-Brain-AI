@@ -6,6 +6,9 @@ import { useModal } from '../context/ModalContext';
 export const Editor: React.FC = () => {
   const {
     notes,
+    collections,
+    activeCollection,
+    setActiveCollection,
     addNote,
     updateNote,
     deleteNote,
@@ -17,36 +20,45 @@ export const Editor: React.FC = () => {
   } = useNotes();
   const { openModal } = useModal();
 
-  const [activeNote, setActiveNote] = useState<NoteItem | null>(() => notes[0] || null);
+  // Filter notes by search query AND activeCollection
+  const collectionNotes = activeCollection
+    ? notes.filter((n) => n.collectionId === activeCollection)
+    : notes;
+
+  const filteredNotes = collectionNotes.filter(
+    (n) =>
+      n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      n.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      n.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const [activeNote, setActiveNote] = useState<NoteItem | null>(() => filteredNotes[0] || null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [collectionId, setCollectionId] = useState<string>('engineering');
   const [tagInput, setTagInput] = useState('');
   const [isPreview, setIsPreview] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
 
+  const activeColObj = collections.find((c) => c.id === activeCollection);
+
   useEffect(() => {
     if (activeNote) {
       setTitle(activeNote.title);
       setContent(activeNote.content);
       setTags(activeNote.tags || []);
-    } else if (notes.length > 0) {
-      setActiveNote(notes[0]);
+      setCollectionId(activeNote.collectionId || collections[0]?.id || 'engineering');
+    } else if (filteredNotes.length > 0) {
+      setActiveNote(filteredNotes[0]);
     } else {
       setTitle('');
       setContent('');
       setTags([]);
     }
-  }, [activeNote?.id, notes]);
-
-  const filteredNotes = notes.filter(
-    (n) =>
-      n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      n.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      n.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  }, [activeNote?.id, filteredNotes.length, activeCollection]);
 
   const handleSave = async () => {
     if (!title.trim() && !content.trim()) return;
@@ -57,12 +69,14 @@ export const Editor: React.FC = () => {
         title,
         content,
         tags,
+        collectionId,
       });
     } else {
       const created = await addNote({
         title: title || 'Untitled Note',
         content,
         tags,
+        collectionId: collectionId || activeCollection || collections[0]?.id || 'engineering',
       });
       setActiveNote(created);
     }
@@ -83,7 +97,7 @@ export const Editor: React.FC = () => {
       if (activeNote && notes.some((n) => n.id === activeNote.id)) {
         await updateNote(activeNote.id, { summary, tags: newTags });
       }
-      setAiMessage('AI Tags and Summary updated successfully.');
+      setAiMessage('AI Tags and Summary generated successfully.');
     } catch {
       setAiMessage('AI processing completed.');
     } finally {
@@ -107,10 +121,6 @@ export const Editor: React.FC = () => {
     setTags(tags.filter((t) => t !== tagToRemove));
   };
 
-  const handleCreateNew = () => {
-    openModal();
-  };
-
   return (
     <Layout>
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#09090b]">
@@ -121,13 +131,26 @@ export const Editor: React.FC = () => {
               <span className="material-symbols-outlined text-indigo-400">description</span>
               Knowledge Editor
             </h2>
+            {activeColObj && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-xs text-indigo-300 font-medium">
+                <span className="material-symbols-outlined text-xs">{activeColObj.icon}</span>
+                {activeColObj.name}
+                <button
+                  onClick={() => setActiveCollection(null)}
+                  className="ml-1 hover:text-white cursor-pointer"
+                  title="Clear collection filter"
+                >
+                  ×
+                </button>
+              </span>
+            )}
             <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-2 py-0.5 rounded border border-white/5">
               {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Ready'}
             </span>
           </div>
 
           <div className="flex items-center gap-2.5">
-            {/* Markdown Preview Toggle */}
+            {/* Preview Toggle */}
             <button
               onClick={() => setIsPreview(!isPreview)}
               className={`px-3 py-1.5 rounded-xl border text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -205,7 +228,7 @@ export const Editor: React.FC = () => {
                 Notes ({filteredNotes.length})
               </span>
               <button
-                onClick={handleCreateNew}
+                onClick={openModal}
                 className="text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">add</span>
@@ -217,6 +240,7 @@ export const Editor: React.FC = () => {
               {filteredNotes.length > 0 ? (
                 filteredNotes.map((n) => {
                   const isSelected = activeNote?.id === n.id;
+                  const col = collections.find((c) => c.id === n.collectionId);
                   return (
                     <div
                       key={n.id}
@@ -229,9 +253,16 @@ export const Editor: React.FC = () => {
                     >
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-xs font-semibold text-white truncate">{n.title || 'Untitled'}</p>
-                        {n.pinned && (
-                          <span className="material-symbols-outlined text-amber-400 text-xs shrink-0">push_pin</span>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {col && (
+                            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-white/5 text-zinc-500">
+                              {col.name}
+                            </span>
+                          )}
+                          {n.pinned && (
+                            <span className="material-symbols-outlined text-amber-400 text-xs shrink-0">push_pin</span>
+                          )}
+                        </div>
                       </div>
                       <p className="text-[11px] text-zinc-500 line-clamp-2 font-light">
                         {n.summary || n.content}
@@ -241,7 +272,7 @@ export const Editor: React.FC = () => {
                 })
               ) : (
                 <div className="p-6 text-center text-zinc-500 italic text-xs">
-                  No notes found.
+                  No notes in this scope.
                 </div>
               )}
             </div>
@@ -260,31 +291,55 @@ export const Editor: React.FC = () => {
                   className="w-full bg-transparent border-none text-2xl lg:text-4xl font-bold text-white placeholder-zinc-600 focus:ring-0 p-0 font-display tracking-tight"
                 />
 
-                {/* Tags Section */}
-                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-b border-white/[0.06] py-3">
-                  <span className="text-xs text-zinc-500 font-mono">TAGS:</span>
-                  {tags.map((t) => (
-                    <span
-                      key={t}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-xs text-indigo-300 font-mono"
+                {/* Collection & Tags Row */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-b border-white/[0.06] py-3">
+                  {/* Collection Selector */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-500 font-mono">COLLECTION:</span>
+                    <select
+                      value={collectionId}
+                      onChange={(e) => {
+                        setCollectionId(e.target.value);
+                        if (activeNote && notes.some((n) => n.id === activeNote.id)) {
+                          updateNote(activeNote.id, { collectionId: e.target.value });
+                        }
+                      }}
+                      className="bg-zinc-900 border border-white/[0.1] text-xs text-white rounded-lg px-2.5 py-1 focus:outline-none cursor-pointer"
                     >
-                      #{t}
-                      <button
-                        onClick={() => handleRemoveTag(t)}
-                        className="text-zinc-500 hover:text-rose-400 text-xs cursor-pointer"
+                      {collections.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Tags List */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs text-zinc-500 font-mono">TAGS:</span>
+                    {tags.map((t) => (
+                      <span
+                        key={t}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-xs text-indigo-300 font-mono"
                       >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleAddTag}
-                    placeholder="+ Add tag (Enter)"
-                    className="bg-transparent text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none px-2 py-1"
-                  />
+                        #{t}
+                        <button
+                          onClick={() => handleRemoveTag(t)}
+                          className="text-zinc-500 hover:text-rose-400 text-xs cursor-pointer"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleAddTag}
+                      placeholder="+ Add tag (Enter)"
+                      className="bg-transparent text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none px-2 py-0.5"
+                    />
+                  </div>
                 </div>
 
                 {/* Markdown Raw Edit vs Formatted Preview */}
@@ -319,19 +374,21 @@ export const Editor: React.FC = () => {
                 )}
               </div>
             ) : (
-              /* Clean Empty State */
+              /* Clean Professional Empty State */
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-4 my-auto">
                 <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-white/[0.08] flex items-center justify-center text-zinc-500">
-                  <span className="material-symbols-outlined text-3xl">edit_note</span>
+                  <span className="material-symbols-outlined text-3xl">folder_off</span>
                 </div>
                 <div className="space-y-1 max-w-sm">
-                  <h3 className="text-lg font-bold text-white">No notes yet</h3>
+                  <h3 className="text-lg font-bold text-white">
+                    {activeColObj ? `No notes in ${activeColObj.name} yet.` : 'No notes in this collection yet.'}
+                  </h3>
                   <p className="text-xs text-zinc-400 font-light">
-                    Create your first note to start documenting your thoughts and knowledge base.
+                    Create a note to populate this collection.
                   </p>
                 </div>
                 <button
-                  onClick={handleCreateNew}
+                  onClick={openModal}
                   className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-sm">add</span>

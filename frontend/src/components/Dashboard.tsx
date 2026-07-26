@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Layout from './Layout';
 import { useNotes } from '../context/NotesContext';
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +16,8 @@ export const Dashboard: React.FC = () => {
     activities,
     searchQuery,
     setSearchQuery,
+    activeCollection,
+    setActiveCollection,
     togglePinNote,
     deleteNote,
     importMarkdown,
@@ -32,8 +34,12 @@ export const Dashboard: React.FC = () => {
   const [aiError, setAiError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Filter notes based on search query
-  const filteredNotes = notes.filter(
+  // Filter notes by search query and active collection
+  const collectionNotes = activeCollection
+    ? notes.filter((n) => n.collectionId === activeCollection)
+    : notes;
+
+  const filteredNotes = collectionNotes.filter(
     (n) =>
       n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       n.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -42,6 +48,7 @@ export const Dashboard: React.FC = () => {
 
   const pinnedNotes = filteredNotes.filter((n) => n.pinned);
   const recentNotes = filteredNotes.slice(0, 6);
+  const activeColObj = collections.find((c) => c.id === activeCollection);
 
   // AI Workspace query via Gemini API
   const handleAiAsk = async (e: React.FormEvent) => {
@@ -52,7 +59,7 @@ export const Dashboard: React.FC = () => {
     setAiResponse('');
     setAiError('');
 
-    const contextText = notes
+    const contextText = filteredNotes
       .slice(0, 10)
       .map((n) => `Note Title: ${n.title}\nContent: ${n.content}`)
       .join('\n\n');
@@ -69,7 +76,7 @@ export const Dashboard: React.FC = () => {
           setAiError('Unable to generate AI response. Please try again.');
         }
       } else {
-        const matches = notes.filter(
+        const matches = filteredNotes.filter(
           (n) =>
             n.content.toLowerCase().includes(aiPrompt.toLowerCase()) ||
             n.title.toLowerCase().includes(aiPrompt.toLowerCase())
@@ -78,15 +85,15 @@ export const Dashboard: React.FC = () => {
           setAiResponse(
             `Relevant Note Context Found:\n\n• **${matches[0].title}**: "${matches[0].content.slice(0, 180)}..."`
           );
-        } else if (notes.length > 0) {
+        } else if (filteredNotes.length > 0) {
           setAiResponse(
-            `Found ${notes.length} notes in your workspace. Topic summary: ${notes.slice(0, 3).map((n) => `"${n.title}"`).join(', ')}.`
+            `Found ${filteredNotes.length} notes in your scope. Topic summary: ${filteredNotes.slice(0, 3).map((n) => `"${n.title}"`).join(', ')}.`
           );
         } else {
-          setAiResponse('No notes found in your knowledge base. Create notes to query AI with context.');
+          setAiResponse('No notes found in this scope. Create notes to query AI with context.');
         }
       }
-    } catch (err: any) {
+    } catch {
       setAiError('AI service request failed. Check server connectivity or API key.');
     } finally {
       setAiLoading(false);
@@ -122,9 +129,23 @@ export const Dashboard: React.FC = () => {
         {/* Top Header */}
         <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-20 pb-4 border-b border-white/[0.06]">
           <div>
-            <h2 className="text-2xl lg:text-3xl font-display font-bold tracking-tight text-white">
-              Dashboard
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl lg:text-3xl font-display font-bold tracking-tight text-white">
+                Dashboard
+              </h2>
+              {activeColObj && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-xs font-semibold text-indigo-300">
+                  <span className="material-symbols-outlined text-sm">{activeColObj.icon}</span>
+                  Collection: {activeColObj.name}
+                  <button
+                    onClick={() => setActiveCollection(null)}
+                    className="ml-1 hover:text-white cursor-pointer text-sm"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+            </div>
             <p className="text-zinc-400 text-sm font-normal mt-0.5">
               Welcome back, <span className="text-indigo-400 font-medium">{user?.name || 'User'}</span>
             </p>
@@ -172,7 +193,7 @@ export const Dashboard: React.FC = () => {
 
           <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/[0.08] flex items-center justify-between">
             <div>
-              <p className="text-xs text-zinc-500 uppercase tracking-wider font-mono font-semibold">Collections</p>
+              <p className="text-xs text-zinc-500 uppercase tracking-wider font-mono font-semibold">Total Collections</p>
               <h3 className="text-2xl font-bold text-white mt-1">{collections.length}</h3>
             </div>
             <div className="w-10 h-10 rounded-xl bg-cyan-600/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
@@ -191,7 +212,52 @@ export const Dashboard: React.FC = () => {
           </div>
         </section>
 
-        {/* AI Daily Briefing / Summary */}
+        {/* Collections Quick Filter Section */}
+        <section className="bg-zinc-900/60 border border-white/[0.08] rounded-2xl p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs uppercase tracking-wider font-mono font-semibold text-white">
+              Collections ({collections.length})
+            </h3>
+            {activeCollection && (
+              <button
+                onClick={() => setActiveCollection(null)}
+                className="text-xs text-indigo-400 hover:underline cursor-pointer"
+              >
+                Clear active filter
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {collections.map((col) => {
+              const count = notes.filter((n) => n.collectionId === col.id).length;
+              const isSelected = activeCollection === col.id;
+              return (
+                <div
+                  key={col.id}
+                  onClick={() => {
+                    setActiveCollection(isSelected ? null : col.id);
+                  }}
+                  className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                    isSelected
+                      ? 'bg-indigo-600/20 border-indigo-500/40 text-white shadow-md'
+                      : 'bg-white/[0.02] hover:bg-white/[0.06] border-white/[0.06] text-zinc-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className={`material-symbols-outlined text-base ${col.color}`}>{col.icon}</span>
+                    <span className="text-xs font-semibold truncate">{col.name}</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/5 shrink-0">
+                    {count}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* AI Daily Summary */}
         <section className="bg-zinc-900/70 border border-white/[0.08] rounded-2xl p-6 relative overflow-hidden shadow-xl">
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5">
@@ -210,7 +276,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </section>
 
-        {/* AI Assistant Workspace Box */}
+        {/* AI Assistant Query Box */}
         <section className="bg-zinc-900/70 border border-white/[0.08] rounded-2xl p-6 space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -335,12 +401,12 @@ export const Dashboard: React.FC = () => {
                 <span className="material-symbols-outlined text-indigo-400 text-lg">description</span>
                 Recent Notes ({recentNotes.length})
               </h3>
-              <Link
-                to="/notes"
-                className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+              <button
+                onClick={() => navigate('/notes')}
+                className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
               >
                 View All Notes →
-              </Link>
+              </button>
             </div>
 
             {isLoading ? (
@@ -405,13 +471,15 @@ export const Dashboard: React.FC = () => {
                 ))}
               </div>
             ) : (
-              /* Clean Empty State */
+              /* Clean Empty State when collection or workspace has no notes */
               <div className="p-12 text-center text-zinc-500 rounded-2xl bg-zinc-900/40 border border-white/[0.06] space-y-3">
                 <span className="material-symbols-outlined text-4xl opacity-30">note_add</span>
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-white">No notes yet</p>
+                  <p className="text-sm font-semibold text-white">
+                    {activeColObj ? `No notes in ${activeColObj.name} yet.` : 'No notes in this collection yet.'}
+                  </p>
                   <p className="text-xs text-zinc-400 font-light">
-                    Create your first note to start building your knowledge base.
+                    Create a note to start populating this collection.
                   </p>
                 </div>
                 <button
@@ -419,7 +487,7 @@ export const Dashboard: React.FC = () => {
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer mt-2"
                 >
                   <span className="material-symbols-outlined text-sm">add</span>
-                  <span>Create First Note</span>
+                  <span>Create Note</span>
                 </button>
               </div>
             )}
