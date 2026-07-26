@@ -1,112 +1,222 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from './Layout';
 import axios from 'axios';
 
+interface SystemHealthData {
+  status: string;
+  version: string;
+  timestamp: string;
+  neo4j?: {
+    status: string;
+    connected: boolean;
+    nodeCount?: number;
+    error?: string;
+  };
+  gemini?: {
+    status: string;
+    apiKeyLoaded: boolean;
+    model: string;
+    message?: string;
+  };
+}
+
 export const Settings = () => {
-  const [apiKey, setApiKey] = useState('••••••••••••••••••••••••••••••••');
-  const [isEditingKey, setIsEditingKey] = useState(false);
-  const [neuralEfficiency, setNeuralEfficiency] = useState(85);
+  const [healthData, setHealthData] = useState<SystemHealthData | null>(null);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [healthError, setHealthError] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  const handleClearBrain = async () => {
-     // This would call a backend endpoint to delete all nodes
-     console.log("Clearing all neural nodes...");
-     setShowClearConfirm(false);
-     alert("Neural Substrate Purged.");
+  const fetchHealth = async () => {
+    setHealthLoading(true);
+    setHealthError(null);
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const res = await axios.get(`${baseUrl}/api/health`);
+      setHealthData(res.data);
+    } catch (err: any) {
+      setHealthError('Unable to reach backend health endpoint at http://localhost:8080/api/health');
+    } finally {
+      setHealthLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHealth();
+  }, []);
+
+  const handleClearSubstrate = async () => {
+    try {
+      localStorage.removeItem('sb_notes_v2');
+      localStorage.removeItem('sb_activities');
+      localStorage.removeItem('sb_collections_v1');
+      localStorage.removeItem('sb_active_collection');
+      setShowClearConfirm(false);
+      alert('Local workspace state reset successfully.');
+      window.location.reload();
+    } catch {
+      // fallback
+    }
   };
 
   return (
     <Layout>
-      <main className="flex-1 flex flex-col h-full overflow-y-auto px-6 py-10 lg:px-20 bg-[#05080f]">
-        <div className="max-w-4xl mx-auto w-full space-y-12 pb-20">
-          <header>
-            <h2 className="text-2xl lg:text-4xl font-bold text-white tracking-tight mb-2">Neural Configuration</h2>
-            <p className="text-slate-500 font-medium tracking-wide uppercase text-xs">Calibrating your second brain substrates</p>
+      <main className="flex-1 flex flex-col h-full overflow-y-auto px-6 py-10 lg:px-20 bg-[#09090b]">
+        <div className="max-w-4xl mx-auto w-full space-y-8 pb-20">
+          <header className="border-b border-white/[0.08] pb-4">
+            <h2 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
+              Settings & Infrastructure
+            </h2>
+            <p className="text-xs text-zinc-400 font-normal mt-1">
+              System health monitoring, AI API keys, and workspace management.
+            </p>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* API Integration */}
-            <section className="glass-panel-elevated p-8 rounded-[2.5rem] border border-white/5 bg-white/[0.02] space-y-6">
-              <div className="flex items-center gap-4 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary">key</span>
+          {/* System Health & Status Audit Panel */}
+          <section className="bg-zinc-900/60 border border-white/[0.08] rounded-2xl p-6 space-y-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                  <span className="material-symbols-outlined text-lg">monitor_heart</span>
                 </div>
-                <h3 className="text-lg font-bold text-white">AI Substrate</h3>
-              </div>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Configure your Gemini API connection to power the AI Co-Processor.
-              </p>
-              <div className="space-y-4">
-                <div className="relative">
-                  <input 
-                    type={isEditingKey ? "text" : "password"}
-                    className="w-full bg-[#0a0f1a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    readOnly={!isEditingKey}
-                  />
-                  <button 
-                    onClick={() => setIsEditingKey(!isEditingKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-primary transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-xl">
-                      {isEditingKey ? 'save' : 'edit'}
-                    </span>
-                  </button>
+                <div>
+                  <h3 className="text-sm font-bold text-white">System Status & Health Audit</h3>
+                  <p className="text-[11px] text-zinc-500 font-mono">Backend Status: {healthData?.status || 'UNKNOWN'}</p>
                 </div>
-                <p className="text-[10px] text-slate-600 font-mono italic">Primary model: gemini-flash-latest</p>
               </div>
-            </section>
 
-            {/* Performance */}
-            <section className="glass-panel-elevated p-8 rounded-[2.5rem] border border-white/5 bg-white/[0.02] space-y-6">
-              <div className="flex items-center gap-4 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-amber-500">bolt</span>
-                </div>
-                <h3 className="text-lg font-bold text-white">Neural Efficiency</h3>
+              <button
+                onClick={fetchHealth}
+                disabled={healthLoading}
+                className="px-3 py-1.5 rounded-xl bg-zinc-950 border border-white/[0.1] hover:border-indigo-500/40 text-xs text-zinc-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <span className={`material-symbols-outlined text-sm ${healthLoading ? 'animate-spin' : ''}`}>
+                  refresh
+                </span>
+                <span>Refresh Health</span>
+              </button>
+            </div>
+
+            {healthError ? (
+              <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 font-mono">
+                {healthError}
               </div>
-              <div className="space-y-6">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Response Latency</span>
-                  <span className="text-amber-500 font-mono">Optimized</span>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Backend Service Status */}
+                <div className="p-4 rounded-xl bg-zinc-950/80 border border-white/[0.06] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-zinc-300">Backend Service</span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
+                      ✓ UP
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 font-mono">Port: 8080 · HTTP/1.1</p>
+                  <p className="text-[10px] text-zinc-500 font-mono">Version: {healthData?.version || '1.0.0'}</p>
                 </div>
-                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500 w-[85%] shadow-[0_0_10px_rgba(245,158,11,0.3)]"></div>
+
+                {/* Neo4j Database Status */}
+                <div className="p-4 rounded-xl bg-zinc-950/80 border border-white/[0.06] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-zinc-300">Neo4j Database</span>
+                    {healthData?.neo4j?.connected ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
+                        ✓ ONLINE
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[10px] font-mono font-bold border border-amber-500/30">
+                        ⚠ OFFLINE
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-zinc-500 font-mono">URI: bolt://localhost:7687</p>
+                  <p className="text-[10px] text-zinc-500 font-mono">
+                    {healthData?.neo4j?.connected
+                      ? `${healthData.neo4j.nodeCount} Notes Stored`
+                      : 'Knowledge Graph Offline'}
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500 leading-relaxed italic text-center">
-                  Memory allocation is dynamically scaled based on synapse density.
+
+                {/* Gemini AI Status */}
+                <div className="p-4 rounded-xl bg-zinc-950/80 border border-white/[0.06] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-zinc-300">Gemini AI</span>
+                    {healthData?.gemini?.apiKeyLoaded ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
+                        ✓ CONFIGURED
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[10px] font-mono font-bold border border-amber-500/30">
+                        ⚠ KEY REQUIRED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-zinc-500 font-mono">Model: {healthData?.gemini?.model || 'gemini-1.5-flash'}</p>
+                  <p className="text-[10px] text-zinc-500 font-mono">
+                    {healthData?.gemini?.apiKeyLoaded ? 'API Key Loaded' : 'GEMINI_API_KEY Missing'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {healthData?.timestamp && (
+              <p className="text-[10px] text-zinc-500 font-mono text-right">
+                Last checked: {new Date(healthData.timestamp).toLocaleTimeString()}
+              </p>
+            )}
+          </section>
+
+          {/* AI Key Notice */}
+          <section className="bg-zinc-900/60 border border-white/[0.08] rounded-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <span className="material-symbols-outlined text-lg">key</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Gemini API Environment Configuration</h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Configure your Gemini API key in environment variables or <code className="text-indigo-300 font-mono">application.properties</code>.
                 </p>
               </div>
-            </section>
-          </div>
+            </div>
 
-          {/* Dangerous Zone */}
-          <section className="p-8 rounded-[2.5rem] border border-red-500/10 bg-red-500/[0.02] space-y-6">
-            <h3 className="text-sm font-bold text-red-500 uppercase tracking-[0.2em]">Destructive Operations</h3>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="p-4 rounded-xl bg-zinc-950 border border-white/[0.08] text-xs font-mono text-zinc-300 space-y-2">
+              <p className="text-zinc-500"># Set environment variable in your shell or .env file:</p>
+              <p className="text-indigo-300">export GEMINI_API_KEY="AIzaSyYourSecretGeminiKeyHere"</p>
+              <p className="text-zinc-500 pt-1"># Standard Model Endpoint:</p>
+              <p className="text-emerald-400">https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash</p>
+            </div>
+          </section>
+
+          {/* Workspace Reset Zone */}
+          <section className="p-6 rounded-2xl border border-rose-500/20 bg-rose-500/[0.02] space-y-4">
+            <h3 className="text-xs font-bold text-rose-400 uppercase tracking-wider font-mono">
+              Workspace Operations
+            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h4 className="text-lg font-bold text-white mb-2">Purge Neural Substrate</h4>
-                <p className="text-sm text-slate-400">Permanently delete all notes, projects, and neural connections. This cannot be undone.</p>
+                <h4 className="text-sm font-bold text-white mb-1">Reset Local Substrate</h4>
+                <p className="text-xs text-zinc-400">
+                  Reset local workspace cache and restore default knowledge state.
+                </p>
               </div>
               {!showClearConfirm ? (
                 <button 
                   onClick={() => setShowClearConfirm(true)}
-                  className="px-8 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-2xl font-bold transition-all whitespace-nowrap active:scale-95"
+                  className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0"
                 >
-                  Initiate Purge
+                  Reset Workspace
                 </button>
               ) : (
-                <div className="flex gap-4">
+                <div className="flex items-center gap-2 shrink-0">
                   <button 
-                    onClick={handleClearBrain}
-                    className="px-8 py-3 bg-red-500 text-white rounded-2xl font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 active:scale-95"
+                    onClick={handleClearSubstrate}
+                    className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-semibold hover:bg-rose-500 transition-all cursor-pointer"
                   >
-                    Confirm Delete
+                    Confirm Reset
                   </button>
                   <button 
                     onClick={() => setShowClearConfirm(false)}
-                    className="px-8 py-3 bg-white/5 text-white rounded-2xl font-bold hover:bg-white/10 transition-all"
+                    className="px-4 py-2 bg-zinc-900 text-zinc-300 border border-white/10 rounded-xl text-xs font-medium hover:bg-zinc-800 transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
