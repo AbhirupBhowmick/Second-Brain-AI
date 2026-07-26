@@ -33,6 +33,9 @@ public class AIService {
     @Value("${gemini.model:gemini-2.0-flash}")
     private String geminiModel;
 
+    @Value("${spring.neo4j.uri:}")
+    private String neo4jUri;
+
     @Autowired
     private NoteRepository noteRepository;
 
@@ -157,7 +160,7 @@ public class AIService {
 
     private String generateLocalFallback(String prompt, List<Note> recentNotes, boolean dbOnline, String notice) {
         if (!dbOnline) {
-            return notice + "\n\n[Database Status]: Knowledge Graph (Neo4j) is currently offline at bolt://localhost:7687.";
+            return notice + "\n\n[Database Status]: Knowledge Graph (Neo4j) is currently offline at " + (neo4jUri != null && !neo4jUri.isEmpty() ? neo4jUri : "unconfigured endpoint") + ".";
         }
         if (recentNotes != null && !recentNotes.isEmpty()) {
             Note topNote = recentNotes.get(0);

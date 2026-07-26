@@ -26,8 +26,11 @@ public class HealthController {
     @Value("${gemini.api.key:}")
     private String geminiApiKey;
 
-    @Value("${gemini.model:gemini-1.5-flash}")
+    @Value("${gemini.model:gemini-2.0-flash}")
     private String geminiModel;
+
+    @Value("${spring.neo4j.uri:}")
+    private String neo4jUri;
 
     @Autowired
     private NoteRepository noteRepository;
@@ -48,12 +51,14 @@ public class HealthController {
             long count = noteRepository.count();
             neo4jStatus.put("status", "ONLINE");
             neo4jStatus.put("connected", true);
+            neo4jStatus.put("connectionType", (neo4jUri != null && (neo4jUri.contains("neo4j+s") || neo4jUri.contains("aura"))) ? "AuraDB" : "Neo4j Direct");
             neo4jStatus.put("nodeCount", count);
         } catch (Exception e) {
             logger.warn("Neo4j health check failed: {}", e.getMessage());
             neo4jStatus.put("status", "OFFLINE");
             neo4jStatus.put("connected", false);
-            neo4jStatus.put("error", "Neo4j database service is offline at bolt://localhost:7687");
+            neo4jStatus.put("connectionType", (neo4jUri != null && (neo4jUri.contains("neo4j+s") || neo4jUri.contains("aura"))) ? "AuraDB" : "Neo4j Direct");
+            neo4jStatus.put("error", "Neo4j database service is offline at " + (neo4jUri != null && !neo4jUri.isEmpty() ? neo4jUri : "unconfigured endpoint"));
         }
         health.put("neo4j", neo4jStatus);
 
