@@ -7,7 +7,7 @@ import { useNotes } from '../context/NotesContext';
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, isGuest, logout } = useAuth();
   const { openModal } = useModal();
   const {
     collections,
@@ -97,7 +97,7 @@ const Sidebar: React.FC = () => {
               <h1 className="text-sm font-bold text-white tracking-tight leading-tight truncate">
                 Second Brain <span className="text-indigo-400 font-medium">AI</span>
               </h1>
-              <p className="text-[10px] text-zinc-500 font-mono truncate">Knowledge Base</p>
+              <p className="text-[10px] text-zinc-500 font-mono truncate">Knowledge Platform</p>
             </div>
           </div>
           <button 
@@ -143,7 +143,7 @@ const Sidebar: React.FC = () => {
                     </span>
                     <span className="text-xs tracking-wide">{item.name}</span>
                   </div>
-                  {item.count !== undefined && (
+                  {item.count !== undefined && item.count > 0 && (
                     <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
                       {item.count}
                     </span>
@@ -163,15 +163,15 @@ const Sidebar: React.FC = () => {
                 <button
                   onClick={() => setActiveCollection(null)}
                   className="text-[10px] text-indigo-400 hover:underline cursor-pointer"
-                  title="Clear Active Filter"
+                  title="Reset Filter"
                 >
-                  Clear
+                  Reset Filter
                 </button>
               )}
               <button
                 onClick={() => setIsCreatingCollection(true)}
                 className="text-zinc-500 hover:text-indigo-400 transition-colors p-0.5 cursor-pointer"
-                title="Create New Collection"
+                title="Create Collection"
               >
                 <span className="material-symbols-outlined text-sm">add</span>
               </button>
@@ -258,9 +258,11 @@ const Sidebar: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-2 py-0.5 rounded border border-white/5">
-                        {count}
-                      </span>
+                      {count > 0 && (
+                        <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                          {count}
+                        </span>
+                      )}
                       
                       {/* Collection Actions (Rename/Delete) */}
                       <div className="hidden group-hover/item:flex items-center gap-1">
@@ -296,7 +298,7 @@ const Sidebar: React.FC = () => {
           </ul>
         </div>
 
-        {/* Footer / User Session */}
+        {/* Profile Footer Section */}
         <div className="mt-auto p-4 space-y-3 border-t border-white/[0.06]">
           <button 
             onClick={openModal}
@@ -306,24 +308,38 @@ const Sidebar: React.FC = () => {
             New Note
           </button>
 
-          {/* User profile section */}
+          {/* Clean Profile Box */}
           <div className="flex items-center gap-3 p-2.5 rounded-xl bg-zinc-900/80 border border-white/[0.06]">
             <div className="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center font-bold text-xs text-indigo-300 shrink-0">
-              {user?.avatar || (user?.name ? user.name.slice(0, 2).toUpperCase() : 'US')}
+              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'KA'}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <p className="text-xs font-semibold text-white truncate">{user?.name || 'User'}</p>
+                <p className="text-xs font-semibold text-white truncate">{user?.name || 'Knowledge Architect'}</p>
+                {isGuest && (
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Demo
+                  </span>
+                )}
               </div>
-              <p className="text-[10px] text-zinc-500 truncate">{user?.email || 'user@secondbrain.ai'}</p>
+              <p className="text-[10px] text-zinc-500 truncate">{user?.email || 'architect@secondbrain.ai'}</p>
             </div>
-            <button 
-              onClick={handleLogout}
-              className="p-1.5 text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer rounded-lg hover:bg-white/5"
-              title="Sign Out"
-            >
-              <span className="material-symbols-outlined text-base">logout</span>
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={() => navigate('/settings')}
+                className="p-1 text-zinc-500 hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-white/5"
+                title="Settings"
+              >
+                <span className="material-symbols-outlined text-base">settings</span>
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="p-1 text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer rounded-lg hover:bg-white/5"
+                title="Sign Out"
+              >
+                <span className="material-symbols-outlined text-base">logout</span>
+              </button>
+            </div>
           </div>
         </div>
       </nav>

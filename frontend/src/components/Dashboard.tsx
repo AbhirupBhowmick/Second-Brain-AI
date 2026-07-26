@@ -2,13 +2,11 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from './Layout';
 import { useNotes } from '../context/NotesContext';
-import { useAuth } from '../context/AuthContext';
 import { useModal } from '../context/ModalContext';
 import axios from 'axios';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { openModal } = useModal();
   const {
     notes,
@@ -17,7 +15,7 @@ export const Dashboard: React.FC = () => {
     searchQuery,
     setSearchQuery,
     activeCollection,
-    setActiveCollection,
+    addCollection,
     togglePinNote,
     deleteNote,
     importMarkdown,
@@ -48,7 +46,6 @@ export const Dashboard: React.FC = () => {
 
   const pinnedNotes = filteredNotes.filter((n) => n.pinned);
   const recentNotes = filteredNotes.slice(0, 6);
-  const activeColObj = collections.find((c) => c.id === activeCollection);
 
   // AI Workspace query via Gemini API
   const handleAiAsk = async (e: React.FormEvent) => {
@@ -87,14 +84,14 @@ export const Dashboard: React.FC = () => {
           );
         } else if (filteredNotes.length > 0) {
           setAiResponse(
-            `Found ${filteredNotes.length} notes in your scope. Topic summary: ${filteredNotes.slice(0, 3).map((n) => `"${n.title}"`).join(', ')}.`
+            `Found ${filteredNotes.length} notes in scope. Topics: ${filteredNotes.slice(0, 3).map((n) => `"${n.title}"`).join(', ')}.`
           );
         } else {
-          setAiResponse('No notes found in this scope. Create notes to query AI with context.');
+          setAiResponse('No notes found in scope. Create notes to query Gemini with context.');
         }
       }
     } catch {
-      setAiError('AI service request failed. Check server connectivity or API key.');
+      setAiError('AI service request failed. Verify backend API connection.');
     } finally {
       setAiLoading(false);
     }
@@ -115,6 +112,13 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const handleCreateCollectionPrompt = () => {
+    const name = window.prompt('Enter new collection name:');
+    if (name && name.trim()) {
+      addCollection(name.trim());
+    }
+  };
+
   return (
     <Layout>
       <input
@@ -129,58 +133,76 @@ export const Dashboard: React.FC = () => {
         {/* Top Header */}
         <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-20 pb-4 border-b border-white/[0.06]">
           <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl lg:text-3xl font-display font-bold tracking-tight text-white">
-                Dashboard
-              </h2>
-              {activeColObj && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-xs font-semibold text-indigo-300">
-                  <span className="material-symbols-outlined text-sm">{activeColObj.icon}</span>
-                  Collection: {activeColObj.name}
-                  <button
-                    onClick={() => setActiveCollection(null)}
-                    className="ml-1 hover:text-white cursor-pointer text-sm"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-            </div>
+            <h2 className="text-2xl lg:text-3xl font-display font-bold tracking-tight text-white">
+              Dashboard
+            </h2>
             <p className="text-zinc-400 text-sm font-normal mt-0.5">
-              Welcome back, <span className="text-indigo-400 font-medium">{user?.name || 'User'}</span>
+              Manage your knowledge workspace.
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3 flex-wrap">
+          {/* Command Palette & Search Trigger */}
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-zinc-900 border border-white/[0.1] hover:border-indigo-500/40 text-zinc-300 hover:text-white text-xs font-medium transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+              className="px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/[0.1] hover:border-indigo-500/40 text-zinc-300 hover:text-white text-xs font-medium transition-all flex items-center gap-2 cursor-pointer shadow-sm"
             >
               <span className="material-symbols-outlined text-sm text-indigo-400">search</span>
               <span>Command Palette (⌘K)</span>
             </button>
+          </div>
+        </header>
+
+        {/* Compact Quick Actions Section */}
+        <section className="bg-zinc-900/60 border border-white/[0.08] rounded-2xl p-4">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 mb-3 px-1">
+            Quick Actions
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <button
+              onClick={openModal}
+              className="p-3 rounded-xl bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs font-semibold transition-all flex items-center gap-2.5 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">add</span>
+              <span>New Note</span>
+            </button>
 
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-3.5 py-2 rounded-xl bg-zinc-900 border border-white/[0.1] hover:border-white/[0.2] text-zinc-300 hover:text-white text-xs font-medium transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+              className="p-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/[0.08] text-zinc-300 text-xs font-medium transition-all flex items-center gap-2.5 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-sm text-zinc-400">file_upload</span>
+              <span className="material-symbols-outlined text-base text-zinc-400">file_upload</span>
               <span>Import .md</span>
             </button>
 
             <button
-              onClick={openModal}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/20 active:scale-95"
+              onClick={handleCreateCollectionPrompt}
+              className="p-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/[0.08] text-zinc-300 text-xs font-medium transition-all flex items-center gap-2.5 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-sm">add</span>
-              <span>New Note</span>
+              <span className="material-symbols-outlined text-base text-cyan-400">create_new_folder</span>
+              <span>Create Collection</span>
+            </button>
+
+            <button
+              onClick={() => navigate('/map')}
+              className="p-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/[0.08] text-zinc-300 text-xs font-medium transition-all flex items-center gap-2.5 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base text-emerald-400">hub</span>
+              <span>Open Graph</span>
+            </button>
+
+            <button
+              onClick={() => navigate('/chat')}
+              className="p-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/[0.08] text-zinc-300 text-xs font-medium transition-all flex items-center gap-2.5 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base text-amber-400">smart_toy</span>
+              <span>Start AI Chat</span>
             </button>
           </div>
-        </header>
+        </section>
 
-        {/* Real Product Metrics Row */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Real Product Metrics Grid */}
+        <section className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/[0.08] flex items-center justify-between">
             <div>
               <p className="text-xs text-zinc-500 uppercase tracking-wider font-mono font-semibold">Total Notes</p>
@@ -193,7 +215,7 @@ export const Dashboard: React.FC = () => {
 
           <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/[0.08] flex items-center justify-between">
             <div>
-              <p className="text-xs text-zinc-500 uppercase tracking-wider font-mono font-semibold">Total Collections</p>
+              <p className="text-xs text-zinc-500 uppercase tracking-wider font-mono font-semibold">Collections</p>
               <h3 className="text-2xl font-bold text-white mt-1">{collections.length}</h3>
             </div>
             <div className="w-10 h-10 rounded-xl bg-cyan-600/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
@@ -203,57 +225,24 @@ export const Dashboard: React.FC = () => {
 
           <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/[0.08] flex items-center justify-between">
             <div>
+              <p className="text-xs text-zinc-500 uppercase tracking-wider font-mono font-semibold">Graph Links</p>
+              <h3 className="text-2xl font-bold text-white mt-1">
+                {notes.filter((n) => n.tags && n.tags.length > 0).length}
+              </h3>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-emerald-600/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <span className="material-symbols-outlined text-xl">hub</span>
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/[0.08] flex items-center justify-between">
+            <div>
               <p className="text-xs text-zinc-500 uppercase tracking-wider font-mono font-semibold">Storage Used</p>
               <h3 className="text-2xl font-bold text-white mt-1">{getStorageUsedFormatted()}</h3>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-600/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div className="w-10 h-10 rounded-xl bg-amber-600/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
               <span className="material-symbols-outlined text-xl">hard_drive</span>
             </div>
-          </div>
-        </section>
-
-        {/* Collections Quick Filter Section */}
-        <section className="bg-zinc-900/60 border border-white/[0.08] rounded-2xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs uppercase tracking-wider font-mono font-semibold text-white">
-              Collections ({collections.length})
-            </h3>
-            {activeCollection && (
-              <button
-                onClick={() => setActiveCollection(null)}
-                className="text-xs text-indigo-400 hover:underline cursor-pointer"
-              >
-                Clear active filter
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {collections.map((col) => {
-              const count = notes.filter((n) => n.collectionId === col.id).length;
-              const isSelected = activeCollection === col.id;
-              return (
-                <div
-                  key={col.id}
-                  onClick={() => {
-                    setActiveCollection(isSelected ? null : col.id);
-                  }}
-                  className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                    isSelected
-                      ? 'bg-indigo-600/20 border-indigo-500/40 text-white shadow-md'
-                      : 'bg-white/[0.02] hover:bg-white/[0.06] border-white/[0.06] text-zinc-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className={`material-symbols-outlined text-base ${col.color}`}>{col.icon}</span>
-                    <span className="text-xs font-semibold truncate">{col.name}</span>
-                  </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/5 shrink-0">
-                    {count}
-                  </span>
-                </div>
-              );
-            })}
           </div>
         </section>
 
@@ -276,14 +265,14 @@ export const Dashboard: React.FC = () => {
           </div>
         </section>
 
-        {/* AI Assistant Query Box */}
+        {/* AI Assistant Workspace Box */}
         <section className="bg-zinc-900/70 border border-white/[0.08] rounded-2xl p-6 space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <span className="material-symbols-outlined text-indigo-400 text-lg">psychology</span>
-              <h3 className="text-sm font-semibold text-white tracking-tight">AI Assistant Query</h3>
+              <h3 className="text-sm font-semibold text-white tracking-tight">AI Knowledge Assistant</h3>
             </div>
-            <span className="text-[10px] font-mono text-zinc-500">Gemini Powered</span>
+            <span className="text-[10px] font-mono text-zinc-500">Powered by Gemini</span>
           </div>
 
           <form onSubmit={handleAiAsk} className="flex items-center gap-3">
@@ -291,7 +280,7 @@ export const Dashboard: React.FC = () => {
               type="text"
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="Ask AI anything about your stored notes..."
+              placeholder="Ask Gemini about your notes, research, code or ideas..."
               className="flex-1 px-4 py-3 bg-zinc-950 border border-white/[0.08] rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
             />
             <button
@@ -306,7 +295,7 @@ export const Dashboard: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <span>Ask AI</span>
+                  <span>Ask Gemini</span>
                   <span className="material-symbols-outlined text-sm">send</span>
                 </>
               )}
@@ -471,15 +460,15 @@ export const Dashboard: React.FC = () => {
                 ))}
               </div>
             ) : (
-              /* Clean Empty State when collection or workspace has no notes */
+              /* Clean Empty State */
               <div className="p-12 text-center text-zinc-500 rounded-2xl bg-zinc-900/40 border border-white/[0.06] space-y-3">
                 <span className="material-symbols-outlined text-4xl opacity-30">note_add</span>
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-white">
-                    {activeColObj ? `No notes in ${activeColObj.name} yet.` : 'No notes in this collection yet.'}
+                    No notes in this scope.
                   </p>
                   <p className="text-xs text-zinc-400 font-light">
-                    Create a note to start populating this collection.
+                    Create a note to populate your knowledge workspace.
                   </p>
                 </div>
                 <button
