@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Layout from './Layout';
 import { useNotes } from '../context/NotesContext';
 import axios from 'axios';
+import { getApiUrl } from '../config/api';
 
 interface Message {
   id: string;
@@ -48,9 +49,8 @@ export const Chat: React.FC = () => {
       .join('\n\n');
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const response = await axios.post(`${baseUrl}/api/chat`, {
-        prompt: `Knowledge Context:\n${contextText}\n\nUser Prompt: ${textToSend}`,
+      const response = await axios.post(getApiUrl('/api/chat'), {
+        prompt: textToSend,
       });
 
       if (response.data?.reply) {
@@ -68,7 +68,7 @@ export const Chat: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Chat error:', err);
-      const serverMsg = err.response?.data?.message || err.response?.data?.reply || 'AI Service unavailable. Verify API configuration or try again.';
+      const serverMsg = err.response?.data?.message || err.response?.data?.reply || err.message || 'AI Service unavailable. Verify API configuration or try again.';
       setError(serverMsg);
     } finally {
       setLoading(false);

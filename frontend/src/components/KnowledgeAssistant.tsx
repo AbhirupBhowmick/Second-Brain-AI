@@ -5,6 +5,7 @@ import { useNotes, type NoteItem } from '../context/NotesContext';
 import { useModal } from '../context/ModalContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getApiUrl } from '../config/api';
 
 interface Message {
   id: string;
@@ -127,9 +128,8 @@ export const KnowledgeAssistant: React.FC = () => {
       .join('\n\n');
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const res = await axios.post(`${baseUrl}/api/chat`, {
-        prompt: `You are the Second Brain AI Knowledge Graph Assistant.\n\nUser Question: ${text}\n\nRetrieved Notes Context:\n${contextText}\n\nProvide an insightful, grounded answer highlighting the relationships between these notes.`,
+      const res = await axios.post(getApiUrl('/api/chat'), {
+        prompt: text,
       });
       const replyContent = res.data?.reply || 'Analyzed your knowledge graph concepts.';
 
@@ -150,7 +150,7 @@ export const KnowledgeAssistant: React.FC = () => {
 
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || err.response?.data?.reply || 'AI Service unavailable. Please verify API configuration.';
+      const errorMsg = err.response?.data?.message || err.response?.data?.reply || err.message || 'AI Service unavailable. Please verify API configuration.';
       setMessages((prev) => [
         ...prev,
         {

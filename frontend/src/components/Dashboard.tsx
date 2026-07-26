@@ -4,6 +4,7 @@ import Layout from './Layout';
 import { useNotes } from '../context/NotesContext';
 import { useModal } from '../context/ModalContext';
 import axios from 'axios';
+import { getApiUrl } from '../config/api';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -63,15 +64,9 @@ export const Dashboard: React.FC = () => {
     setAiResponse('');
     setAiError('');
 
-    const contextText = filteredNotes
-      .slice(0, 10)
-      .map((n) => `Note Title: ${n.title}\nContent: ${n.content}`)
-      .join('\n\n');
-
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const res = await axios.post(`${baseUrl}/api/chat`, {
-        prompt: `Stored Knowledge Context:\n${contextText}\n\nUser Question: ${aiPrompt}`,
+      const res = await axios.post(getApiUrl('/api/chat'), {
+        prompt: aiPrompt,
       });
       if (res.data?.reply) {
         setAiResponse(res.data.reply);
@@ -79,7 +74,7 @@ export const Dashboard: React.FC = () => {
         setAiError('Unable to generate AI response. Please try again.');
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.response?.data?.reply || 'AI service request failed. Verify backend API connection.';
+      const msg = err.response?.data?.message || err.response?.data?.reply || err.message || 'AI service request failed. Verify backend API connection.';
       setAiError(msg);
     } finally {
       setAiLoading(false);

@@ -69,6 +69,7 @@ public class HealthController {
         geminiStatus.put("apiKeyLoaded", apiKeyPresent);
         geminiStatus.put("model", geminiModel);
         geminiStatus.put("lastSuccessfulAiRequestTime", aiService.getLastSuccessfulAiRequestTime());
+        geminiStatus.put("lastAiError", aiService.getLastAiError());
         if (!apiKeyPresent) {
             geminiStatus.put("message", "Set GEMINI_API_KEY environment variable to enable Gemini AI synthesis");
         }
