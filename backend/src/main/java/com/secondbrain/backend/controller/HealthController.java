@@ -26,7 +26,7 @@ public class HealthController {
     @Value("${gemini.api.key:}")
     private String geminiApiKey;
 
-    @Value("${gemini.model:gemini-2.5-flash}")
+    @Value("${gemini.model:gemini-3.1-flash-lite}")
     private String geminiModel;
 
     @Value("${spring.neo4j.uri:}")

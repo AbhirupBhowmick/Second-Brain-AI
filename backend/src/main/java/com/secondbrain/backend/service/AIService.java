@@ -30,7 +30,7 @@ public class AIService {
     @Value("${gemini.api.key:}")
     private String geminiApiKey;
 
-    @Value("${gemini.model:gemini-2.5-flash}")
+    @Value("${gemini.model:gemini-3.1-flash-lite}")
     private String geminiModel;
 
     @Value("${spring.neo4j.uri:}")
@@ -79,8 +79,8 @@ public class AIService {
         contextBuilder.append("\nUSER QUESTION: ").append(prompt);
         String finalPrompt = contextBuilder.toString();
 
-        // Target primary configured model (gemini-2.5-flash) with failover to gemini-flash-latest
-        String[] modelCandidates = new String[] { geminiModel, "gemini-flash-latest" };
+        // Model candidates targeting gemini-3.1-flash-lite with failover to gemini-flash-lite-latest & gemini-flash-latest
+        String[] modelCandidates = new String[] { geminiModel, "gemini-flash-lite-latest", "gemini-flash-latest" };
 
         for (String currentModel : modelCandidates) {
             try {
@@ -94,14 +94,14 @@ public class AIService {
             } catch (HttpClientErrorException.TooManyRequests e) {
                 logger.warn("Gemini 429 Quota Exceeded for model {}: {}", currentModel, e.getResponseBodyAsString());
                 if (!"gemini-flash-latest".equals(currentModel)) {
-                    continue; // Try failover candidate
+                    continue; // Failover to next candidate
                 }
                 return generateLocalFallback(prompt, recentNotes, dbOnline, 
                     "[System Notice]: Gemini AI is temporarily unavailable because the API quota for this project has been exceeded. Please try again later or update the configured API key.");
             } catch (HttpClientErrorException.NotFound e) {
                 logger.warn("Gemini Model Not Found for model {}: {}", currentModel, e.getResponseBodyAsString());
                 if (!"gemini-flash-latest".equals(currentModel)) {
-                    continue; // Try failover candidate
+                    continue; // Failover to next candidate
                 }
                 return generateLocalFallback(prompt, recentNotes, dbOnline, 
                     "[System Notice]: Configured Gemini model ('" + geminiModel + "') is unavailable.");
