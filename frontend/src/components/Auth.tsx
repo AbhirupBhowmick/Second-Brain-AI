@@ -193,6 +193,22 @@ export const Auth: React.FC = () => {
 
   return (
     <div className="relative min-h-screen w-full bg-[#09090b] overflow-hidden flex selection:bg-indigo-500/30 selection:text-indigo-200">
+      {/* Back to Home Button */}
+      <button
+        onClick={() => navigate('/')}
+        className="absolute top-6 left-6 lg:left-8 z-30 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-white/[0.08] text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer shadow-md group backdrop-blur-md"
+      >
+        <svg
+          className="w-4 h-4 text-zinc-400 group-hover:text-indigo-400 transition-transform duration-200 group-hover:-translate-x-0.5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span>Back to Home</span>
+      </button>
+
       {/* Subtle animated dots background */}
       <AuthBackground />
 
