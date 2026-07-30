@@ -193,22 +193,6 @@ export const Auth: React.FC = () => {
 
   return (
     <div className="relative min-h-screen w-full bg-[#09090b] overflow-hidden flex selection:bg-indigo-500/30 selection:text-indigo-200">
-      {/* Back to Home Button */}
-      <button
-        onClick={() => navigate('/')}
-        className="absolute top-6 left-6 lg:left-8 z-30 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-white/[0.08] text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer shadow-md group backdrop-blur-md"
-      >
-        <svg
-          className="w-4 h-4 text-zinc-400 group-hover:text-indigo-400 transition-transform duration-200 group-hover:-translate-x-0.5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        <span>Back to Home</span>
-      </button>
-
       {/* Subtle animated dots background */}
       <AuthBackground />
 
@@ -220,8 +204,26 @@ export const Auth: React.FC = () => {
 
       {/* ─── Right Auth Panel (40% desktop, full on mobile) ───────────────── */}
       <div className="relative z-10 flex flex-col items-center justify-center w-full lg:w-[42%] xl:w-[40%] min-h-screen px-6 sm:px-10 py-16">
+        {/* Minimal Aligned Back to Home Button */}
+        <div className="w-full max-w-[420px] mb-4 flex items-center justify-between">
+          <button
+            onClick={() => navigate('/')}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer group"
+          >
+            <svg
+              className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-300 transition-transform duration-200 group-hover:-translate-x-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Back to home</span>
+          </button>
+        </div>
+
         {/* Mobile logo */}
-        <div className="flex lg:hidden items-center gap-3 mb-10">
+        <div className="flex lg:hidden items-center gap-3 mb-8">
           <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center">
             <svg
               className="w-5 h-5 text-indigo-400"
