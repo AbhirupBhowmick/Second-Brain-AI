@@ -69,7 +69,7 @@ export const Chat: React.FC = () => {
     } catch (err: any) {
       console.error('Chat error:', err);
       const serverMsg = err.response?.data?.message || 
-        (err.response?.status === 401 ? 'Authentication failure (401): Invalid or missing Gemini API key. Please verify your GEMINI_API_KEY environment variable.' : null) ||
+        (err.response?.status === 401 ? 'Authentication failure (401): Invalid or missing AI API key. Please verify your environment configuration.' : null) ||
         err.response?.data?.reply || 
         err.message || 
         'AI Service unavailable. Verify API configuration or try again.';
@@ -90,7 +90,7 @@ export const Chat: React.FC = () => {
               AI Co-Processor
             </h2>
             <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-2 py-0.5 rounded border border-white/5">
-              Gemini Integration
+              AI Assistant Engine
             </span>
           </div>
 
@@ -177,7 +177,7 @@ export const Chat: React.FC = () => {
             <div className="flex justify-start animate-pulse">
               <div className="flex items-center gap-3 p-4 rounded-2xl bg-zinc-900/80 border border-white/[0.08]">
                 <div className="w-3.5 h-3.5 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
-                <span className="text-xs text-zinc-400 font-mono">Querying Gemini API...</span>
+                <span className="text-xs text-zinc-400 font-mono">Processing AI request...</span>
               </div>
             </div>
           )}

@@ -161,9 +161,9 @@ const Sidebar: React.FC = () => {
         </div>
 
         {/* Collections Section */}
-        <div className="px-3 mt-5 space-y-1 flex-1 overflow-y-auto scroll-hide">
-          <div className="flex items-center justify-between px-3 py-1">
-            <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Collections</p>
+        <div className="px-3 mt-4 space-y-1 flex-1 overflow-y-auto scroll-hide">
+          <div className="flex items-center justify-between px-2 py-1">
+            <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Collections</p>
             <div className="flex items-center gap-2">
               {activeCollection && (
                 <button
@@ -171,7 +171,7 @@ const Sidebar: React.FC = () => {
                   className="text-[10px] text-indigo-400 hover:underline cursor-pointer"
                   title="Reset Filter"
                 >
-                  Reset Filter
+                  Reset
                 </button>
               )}
               <button
@@ -228,7 +228,7 @@ const Sidebar: React.FC = () => {
                         value={editingColName}
                         onChange={(e) => setEditingColName(e.target.value)}
                         autoFocus
-                        className="flex-1 px-2.5 py-1 bg-zinc-900 border border-indigo-500/40 rounded-lg text-xs text-white focus:outline-none"
+                        className="flex-1 px-2 py-0.5 bg-zinc-900 border border-indigo-500/40 rounded text-xs text-white focus:outline-none"
                       />
                       <button type="submit" className="p-1 text-indigo-400 hover:text-white cursor-pointer">
                         <span className="material-symbols-outlined text-sm">check</span>
@@ -252,25 +252,24 @@ const Sidebar: React.FC = () => {
                       setActiveCollection(isSelected ? null : col.id);
                       if (location.pathname !== '/notes') navigate('/notes');
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-indigo-600/20 text-indigo-300 font-semibold border border-indigo-500/30'
+                        ? 'bg-indigo-600/15 text-indigo-300 font-medium'
                         : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                       <span className={`material-symbols-outlined text-sm ${col.color}`}>{col.icon}</span>
-                      <span className="truncate">{col.name}</span>
+                      <span className="truncate text-xs">{col.name}</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       {count > 0 && (
-                        <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                        <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-1.5 py-0.2 rounded">
                           {count}
                         </span>
                       )}
                       
-                      {/* Collection Actions (Rename/Delete) */}
                       <div className="hidden group-hover/item:flex items-center gap-1">
                         <button
                           onClick={(e) => {
@@ -305,45 +304,38 @@ const Sidebar: React.FC = () => {
         </div>
 
         {/* Profile Footer Section */}
-        <div className="mt-auto p-4 space-y-3 border-t border-white/[0.06]">
+        <div className="mt-auto p-3 space-y-2 border-t border-white/[0.06]">
           <button 
             onClick={openModal}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all font-semibold text-xs shadow-lg shadow-indigo-600/20 active:scale-95 cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all font-medium text-xs shadow-md shadow-indigo-600/20 active:scale-95 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-base">add</span>
+            <span className="material-symbols-outlined text-sm">add</span>
             New Note
           </button>
 
-          {/* Clean Profile Box */}
-          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-zinc-900/80 border border-white/[0.06]">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center font-bold text-xs text-indigo-300 shrink-0">
+          {/* Clean Small Profile Box */}
+          <div className="flex items-center gap-2.5 p-2 rounded-lg bg-zinc-900/60 border border-white/[0.04]">
+            <div className="w-7 h-7 rounded-md bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-bold text-[11px] text-indigo-300 shrink-0">
               {user?.name ? user.name.slice(0, 2).toUpperCase() : 'KA'}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <p className="text-xs font-semibold text-white truncate">{user?.name || 'Knowledge Architect'}</p>
-                {isGuest && (
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Demo
-                  </span>
-                )}
-              </div>
+              <p className="text-xs font-medium text-zinc-200 truncate">{user?.name || 'Knowledge Architect'}</p>
               <p className="text-[10px] text-zinc-500 truncate">{user?.email || 'architect@secondbrain.ai'}</p>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-0.5 shrink-0">
               <button
                 onClick={() => navigate('/settings')}
-                className="p-1 text-zinc-500 hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-white/5"
+                className="p-1 text-zinc-500 hover:text-white transition-colors cursor-pointer rounded hover:bg-white/5"
                 title="Settings"
               >
-                <span className="material-symbols-outlined text-base">settings</span>
+                <span className="material-symbols-outlined text-sm">settings</span>
               </button>
               <button 
                 onClick={handleLogout}
-                className="p-1 text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer rounded-lg hover:bg-white/5"
+                className="p-1 text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer rounded hover:bg-white/5"
                 title="Sign Out"
               >
-                <span className="material-symbols-outlined text-base">logout</span>
+                <span className="material-symbols-outlined text-sm">logout</span>
               </button>
             </div>
           </div>

@@ -1,11 +1,9 @@
 import React from 'react';
 import Navbar from './Navbar';
 import HeroSection from './HeroSection';
-import SocialProofSection from './SocialProofSection';
 import FeaturesSection from './FeaturesSection';
 import HowItWorksSection from './HowItWorksSection';
 import ProductPreviewSection from './ProductPreviewSection';
-import WhySecondBrainSection from './WhySecondBrainSection';
 import RoadmapSection from './RoadmapSection';
 import FinalCTASection from './FinalCTASection';
 import Footer from './Footer';
@@ -19,11 +17,9 @@ const LandingPage: React.FC = () => {
       {/* Main Landing Page Content */}
       <main className="relative z-10 space-y-0">
         <HeroSection />
-        <SocialProofSection />
         <FeaturesSection />
         <HowItWorksSection />
         <ProductPreviewSection />
-        <WhySecondBrainSection />
         <RoadmapSection />
         <FinalCTASection />
       </main>

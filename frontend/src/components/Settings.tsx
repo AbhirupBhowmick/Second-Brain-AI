@@ -1,54 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Layout from './Layout';
-import axios from 'axios';
-import { getApiUrl } from '../config/api';
+import { useAuth } from '../context/AuthContext';
 
-interface SystemHealthData {
-  status: string;
-  version: string;
-  timestamp: string;
-  neo4j?: {
-    status: string;
-    connected: boolean;
-    connectionType?: string;
-    nodeCount?: number;
-    error?: string;
-  };
-  gemini?: {
-    status: string;
-    apiKeyLoaded: boolean;
-    model: string;
-    lastSuccessfulAiRequestTime?: string | null;
-    lastAiError?: string | null;
-    message?: string;
-  };
-}
-
-export const Settings = () => {
-  const [healthData, setHealthData] = useState<SystemHealthData | null>(null);
-  const [healthLoading, setHealthLoading] = useState(false);
-  const [healthError, setHealthError] = useState<string | null>(null);
+export const Settings: React.FC = () => {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'profile' | 'display' | 'theme' | 'workspace' | 'preferences' | 'danger'>('profile');
+  const [displayName, setDisplayName] = useState(user?.name || 'Knowledge Architect');
+  const [email] = useState(user?.email || 'architect@secondbrain.ai');
+  const [themeMode, setThemeMode] = useState<'dark' | 'midnight' | 'oled'>('dark');
+  const [displayDensity, setDisplayDensity] = useState<'comfortable' | 'compact'>('comfortable');
+  const [autoSaveNotes, setAutoSaveNotes] = useState(true);
+  const [aiDetailLevel, setAiDetailLevel] = useState<'concise' | 'detailed'>('concise');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
 
-  const fetchHealth = async () => {
-    setHealthLoading(true);
-    setHealthError(null);
-    try {
-      const res = await axios.get(getApiUrl('/api/health'));
-      setHealthData(res.data);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'Unable to reach backend health endpoint.';
-      setHealthError(`Health Audit Notice: ${msg}`);
-    } finally {
-      setHealthLoading(false);
-    }
+  const handleSaveSettings = () => {
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 2500);
   };
 
-  useEffect(() => {
-    fetchHealth();
-  }, []);
-
-  const handleClearSubstrate = async () => {
+  const handleClearSubstrate = () => {
     try {
       localStorage.removeItem('sb_notes_v2');
       localStorage.removeItem('sb_activities');
@@ -62,176 +33,312 @@ export const Settings = () => {
     }
   };
 
+  const tabs = [
+    { id: 'profile', label: 'Profile', icon: 'person' },
+    { id: 'display', label: 'Display', icon: 'desktop_windows' },
+    { id: 'theme', label: 'Theme', icon: 'palette' },
+    { id: 'workspace', label: 'Workspace', icon: 'folder' },
+    { id: 'preferences', label: 'Preferences', icon: 'tune' },
+    { id: 'danger', label: 'Danger Zone', icon: 'warning' },
+  ] as const;
+
   return (
     <Layout>
-      <main className="flex-1 flex flex-col h-full overflow-y-auto px-6 py-10 lg:px-20 bg-[#09090b]">
-        <div className="max-w-4xl mx-auto w-full space-y-8 pb-20">
-          <header className="border-b border-white/[0.08] pb-4">
-            <h2 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
-              Settings & Infrastructure
+      <main className="flex-1 flex flex-col h-full overflow-y-auto px-6 py-8 lg:px-16 bg-[#09090b]">
+        <div className="max-w-4xl mx-auto w-full space-y-8 pb-16">
+          {/* Header */}
+          <header className="border-b border-white/[0.06] pb-4">
+            <h2 className="text-2xl lg:text-3xl font-display font-bold text-white tracking-tight">
+              Settings
             </h2>
-            <p className="text-xs text-zinc-400 font-normal mt-1">
-              System health monitoring, AI API key status, and workspace configuration.
+            <p className="text-xs text-zinc-400 font-normal mt-0.5">
+              Customize your profile, workspace presentation, and personal preferences.
             </p>
           </header>
 
-          {/* System Health & Status Audit Panel */}
-          <section className="bg-zinc-900/60 border border-white/[0.08] rounded-2xl p-6 space-y-6 shadow-xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-                  <span className="material-symbols-outlined text-lg">monitor_heart</span>
+          {/* Navigation Tabs */}
+          <div className="flex items-center gap-1 border-b border-white/[0.06] pb-2 overflow-x-auto hide-scrollbar">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`px-3.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                  activeTab === t.id
+                    ? 'bg-zinc-800 text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">{t.icon}</span>
+                <span>{t.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Tab 1: Profile */}
+          {activeTab === 'profile' && (
+            <section className="bg-zinc-900/40 border border-white/[0.06] rounded-xl p-6 space-y-6 animate-in fade-in duration-200">
+              <h3 className="text-sm font-semibold text-white">Profile Information</h3>
+
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-bold text-base text-indigo-300">
+                  {displayName.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">System Status & Health Audit</h3>
-                  <p className="text-[11px] text-zinc-500 font-mono">Backend Status: {healthData?.status || 'UNKNOWN'}</p>
+                  <p className="text-sm font-medium text-white">{displayName}</p>
+                  <p className="text-xs text-zinc-400">{email}</p>
                 </div>
+              </div>
+
+              <div className="space-y-4 max-w-md pt-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs text-zinc-300 font-medium">Display Name</label>
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="w-full px-3.5 py-2 bg-zinc-950 border border-white/[0.08] rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500/40"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs text-zinc-300 font-medium">Email Address</label>
+                  <input
+                    type="email"
+                    value={email}
+                    disabled
+                    className="w-full px-3.5 py-2 bg-zinc-950/50 border border-white/[0.04] rounded-lg text-xs text-zinc-500 cursor-not-allowed"
+                  />
+                </div>
+
+                <button
+                  onClick={handleSaveSettings}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-all cursor-pointer"
+                >
+                  Save Profile
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* Tab 2: Display */}
+          {activeTab === 'display' && (
+            <section className="bg-zinc-900/40 border border-white/[0.06] rounded-xl p-6 space-y-6 animate-in fade-in duration-200">
+              <h3 className="text-sm font-semibold text-white">Display & Density</h3>
+
+              <div className="space-y-4 max-w-md">
+                <div className="space-y-2">
+                  <label className="text-xs text-zinc-300 font-medium">Layout Density</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setDisplayDensity('comfortable')}
+                      className={`p-3 rounded-lg border text-left text-xs transition-all cursor-pointer ${
+                        displayDensity === 'comfortable'
+                          ? 'border-indigo-500/40 bg-indigo-600/10 text-white'
+                          : 'border-white/[0.06] bg-zinc-950 text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      <div className="font-medium text-white mb-1">Comfortable</div>
+                      <div className="text-[11px] text-zinc-400">Spacious padding and card layout</div>
+                    </button>
+
+                    <button
+                      onClick={() => setDisplayDensity('compact')}
+                      className={`p-3 rounded-lg border text-left text-xs transition-all cursor-pointer ${
+                        displayDensity === 'compact'
+                          ? 'border-indigo-500/40 bg-indigo-600/10 text-white'
+                          : 'border-white/[0.06] bg-zinc-950 text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      <div className="font-medium text-white mb-1">Compact</div>
+                      <div className="text-[11px] text-zinc-400">Higher information density</div>
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleSaveSettings}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-all cursor-pointer"
+                >
+                  Save Display Preferences
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* Tab 3: Theme */}
+          {activeTab === 'theme' && (
+            <section className="bg-zinc-900/40 border border-white/[0.06] rounded-xl p-6 space-y-6 animate-in fade-in duration-200">
+              <h3 className="text-sm font-semibold text-white">Appearance Theme</h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl">
+                <button
+                  onClick={() => setThemeMode('dark')}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                    themeMode === 'dark'
+                      ? 'border-indigo-500/40 bg-zinc-900 text-white'
+                      : 'border-white/[0.06] bg-zinc-950 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <div className="w-full h-12 rounded-lg bg-[#09090b] border border-white/10 mb-3" />
+                  <p className="text-xs font-medium text-white">Dark Default</p>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">Sleek graphite dark mode</p>
+                </button>
+
+                <button
+                  onClick={() => setThemeMode('midnight')}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                    themeMode === 'midnight'
+                      ? 'border-indigo-500/40 bg-zinc-900 text-white'
+                      : 'border-white/[0.06] bg-zinc-950 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <div className="w-full h-12 rounded-lg bg-[#0a0c16] border border-indigo-500/20 mb-3" />
+                  <p className="text-xs font-medium text-white">Midnight</p>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">Deep indigo tint</p>
+                </button>
+
+                <button
+                  onClick={() => setThemeMode('oled')}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                    themeMode === 'oled'
+                      ? 'border-indigo-500/40 bg-zinc-900 text-white'
+                      : 'border-white/[0.06] bg-zinc-950 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <div className="w-full h-12 rounded-lg bg-black border border-white/10 mb-3" />
+                  <p className="text-xs font-medium text-white">OLED Pure Black</p>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">True black contrast</p>
+                </button>
               </div>
 
               <button
-                onClick={fetchHealth}
-                disabled={healthLoading}
-                className="px-3 py-1.5 rounded-xl bg-zinc-950 border border-white/[0.1] hover:border-indigo-500/40 text-xs text-zinc-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                onClick={handleSaveSettings}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-all cursor-pointer"
               >
-                <span className={`material-symbols-outlined text-sm ${healthLoading ? 'animate-spin' : ''}`}>
-                  refresh
-                </span>
-                <span>Refresh Health</span>
+                Apply Theme
               </button>
-            </div>
+            </section>
+          )}
 
-            {healthError ? (
-              <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 font-mono">
-                {healthError}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Backend Service Status */}
-                <div className="p-4 rounded-xl bg-zinc-950/80 border border-white/[0.06] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-300">Backend Service</span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
-                      ✓ UP
-                    </span>
+          {/* Tab 4: Workspace */}
+          {activeTab === 'workspace' && (
+            <section className="bg-zinc-900/40 border border-white/[0.06] rounded-xl p-6 space-y-6 animate-in fade-in duration-200">
+              <h3 className="text-sm font-semibold text-white">Workspace Settings</h3>
+
+              <div className="space-y-4 max-w-md">
+                <div className="flex items-center justify-between py-2 border-b border-white/[0.04]">
+                  <div>
+                    <p className="text-xs font-medium text-white">Auto-save Notes</p>
+                    <p className="text-[11px] text-zinc-400">Save edits continuously while typing</p>
                   </div>
-                  <p className="text-[10px] text-zinc-500 font-mono">Port: 8080 · HTTP/1.1</p>
-                  <p className="text-[10px] text-zinc-500 font-mono">Version: {healthData?.version || '1.0.0'}</p>
+                  <input
+                    type="checkbox"
+                    checked={autoSaveNotes}
+                    onChange={(e) => setAutoSaveNotes(e.target.checked)}
+                    className="w-4 h-4 rounded bg-zinc-950 border-white/10 text-indigo-600 focus:ring-0 cursor-pointer"
+                  />
                 </div>
 
-                {/* Neo4j Database Status */}
-                <div className="p-4 rounded-xl bg-zinc-950/80 border border-white/[0.06] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-300">Neo4j Database</span>
-                    {healthData?.neo4j?.connected ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
-                        ✓ ONLINE
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[10px] font-mono font-bold border border-amber-500/30">
-                        ⚠ OFFLINE
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-zinc-500 font-mono">
-                    URI: {healthData?.neo4j?.connectionType === 'AuraDB' ? 'neo4j+s://bed281a1.databases.neo4j.io' : 'bolt://localhost:7687'}
-                  </p>
-                  <p className="text-[10px] text-zinc-500 font-mono">
-                    {healthData?.neo4j?.connected
-                      ? `${healthData.neo4j.nodeCount} Notes Stored (${healthData.neo4j.connectionType})`
-                      : 'Knowledge Graph Offline'}
-                  </p>
-                </div>
-
-                {/* Gemini AI Status */}
-                <div className="p-4 rounded-xl bg-zinc-950/80 border border-white/[0.06] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-300">Gemini AI Engine</span>
-                    {healthData?.gemini?.apiKeyLoaded ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
-                        ✓ CONFIGURED
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[10px] font-mono font-bold border border-amber-500/30">
-                        ⚠ KEY REQUIRED
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-zinc-500 font-mono">Model: {healthData?.gemini?.model || 'gemini-3.1-flash-lite'}</p>
-                  <p className="text-[10px] text-zinc-500 font-mono">
-                    {healthData?.gemini?.lastSuccessfulAiRequestTime
-                      ? `Last Request: ${new Date(healthData.gemini.lastSuccessfulAiRequestTime).toLocaleTimeString()}`
-                      : 'API Key Loaded'}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {healthData?.timestamp && (
-              <p className="text-[10px] text-zinc-500 font-mono text-right">
-                Last checked: {new Date(healthData.timestamp).toLocaleTimeString()}
-              </p>
-            )}
-          </section>
-
-          {/* AI Key Notice */}
-          <section className="bg-zinc-900/60 border border-white/[0.08] rounded-2xl p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-                <span className="material-symbols-outlined text-lg">key</span>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-white">Gemini API Environment Configuration</h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
-                  Production Gemini API key loaded securely via environment variables.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl bg-zinc-950 border border-white/[0.08] text-xs font-mono text-zinc-300 space-y-2">
-              <p className="text-zinc-500"># Environment Key Injection:</p>
-              <p className="text-indigo-300">GEMINI_API_KEY=•••••••• (Loaded from Environment)</p>
-              <p className="text-zinc-500 pt-1"># Official REST Endpoint:</p>
-              <p className="text-emerald-400">https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite</p>
-            </div>
-          </section>
-
-          {/* Workspace Reset Zone */}
-          <section className="p-6 rounded-2xl border border-rose-500/20 bg-rose-500/[0.02] space-y-4">
-            <h3 className="text-xs font-bold text-rose-400 uppercase tracking-wider font-mono">
-              Workspace Operations
-            </h3>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h4 className="text-sm font-bold text-white mb-1">Reset Local Substrate</h4>
-                <p className="text-xs text-zinc-400">
-                  Reset local workspace cache and restore default knowledge state.
-                </p>
-              </div>
-              {!showClearConfirm ? (
-                <button 
-                  onClick={() => setShowClearConfirm(true)}
-                  className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0"
+                <button
+                  onClick={handleSaveSettings}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-all cursor-pointer"
                 >
-                  Reset Workspace
+                  Save Workspace Settings
                 </button>
-              ) : (
-                <div className="flex items-center gap-2 shrink-0">
-                  <button 
-                    onClick={handleClearSubstrate}
-                    className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-semibold hover:bg-rose-500 transition-all cursor-pointer"
-                  >
-                    Confirm Reset
-                  </button>
-                  <button 
-                    onClick={() => setShowClearConfirm(false)}
-                    className="px-4 py-2 bg-zinc-900 text-zinc-300 border border-white/10 rounded-xl text-xs font-medium hover:bg-zinc-800 transition-all cursor-pointer"
-                  >
-                    Cancel
-                  </button>
+              </div>
+            </section>
+          )}
+
+          {/* Tab 5: Preferences */}
+          {activeTab === 'preferences' && (
+            <section className="bg-zinc-900/40 border border-white/[0.06] rounded-xl p-6 space-y-6 animate-in fade-in duration-200">
+              <h3 className="text-sm font-semibold text-white">AI & Reasoning Preferences</h3>
+
+              <div className="space-y-4 max-w-md">
+                <div className="space-y-2">
+                  <label className="text-xs text-zinc-300 font-medium">AI Response Synthesis Detail</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setAiDetailLevel('concise')}
+                      className={`p-3 rounded-lg border text-left text-xs transition-all cursor-pointer ${
+                        aiDetailLevel === 'concise'
+                          ? 'border-indigo-500/40 bg-indigo-600/10 text-white'
+                          : 'border-white/[0.06] bg-zinc-950 text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      <div className="font-medium text-white mb-1">Concise</div>
+                      <div className="text-[11px] text-zinc-400">Direct 1-2 sentence answers</div>
+                    </button>
+
+                    <button
+                      onClick={() => setAiDetailLevel('detailed')}
+                      className={`p-3 rounded-lg border text-left text-xs transition-all cursor-pointer ${
+                        aiDetailLevel === 'detailed'
+                          ? 'border-indigo-500/40 bg-indigo-600/10 text-white'
+                          : 'border-white/[0.06] bg-zinc-950 text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      <div className="font-medium text-white mb-1">Detailed</div>
+                      <div className="text-[11px] text-zinc-400">Full contextual breakdown</div>
+                    </button>
+                  </div>
                 </div>
-              )}
+
+                <button
+                  onClick={handleSaveSettings}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-all cursor-pointer"
+                >
+                  Save AI Preferences
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* Tab 6: Danger Zone */}
+          {activeTab === 'danger' && (
+            <section className="p-6 rounded-xl border border-rose-500/20 bg-rose-500/[0.02] space-y-4 animate-in fade-in duration-200">
+              <h3 className="text-xs font-semibold text-rose-400 uppercase tracking-wider font-mono">
+                Danger Zone
+              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-white mb-0.5">Reset Local Workspace</h4>
+                  <p className="text-xs text-zinc-400">
+                    Clear local workspace cache and restore default state.
+                  </p>
+                </div>
+                {!showClearConfirm ? (
+                  <button 
+                    onClick={() => setShowClearConfirm(true)}
+                    className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0"
+                  >
+                    Reset Workspace
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button 
+                      onClick={handleClearSubstrate}
+                      className="px-4 py-2 bg-rose-600 text-white rounded-lg text-xs font-medium hover:bg-rose-500 transition-all cursor-pointer"
+                    >
+                      Confirm Reset
+                    </button>
+                    <button 
+                      onClick={() => setShowClearConfirm(false)}
+                      className="px-4 py-2 bg-zinc-900 text-zinc-300 border border-white/10 rounded-lg text-xs font-medium hover:bg-zinc-800 transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {savedSuccess && (
+            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-medium animate-in fade-in">
+              Preferences updated successfully.
             </div>
-          </section>
+          )}
         </div>
       </main>
     </Layout>

@@ -151,7 +151,7 @@ export const KnowledgeAssistant: React.FC = () => {
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 
-        (err.response?.status === 401 ? 'Authentication failure (401): Invalid or missing Gemini API key. Please verify your GEMINI_API_KEY environment variable.' : null) ||
+        (err.response?.status === 401 ? 'Authentication failure (401): Invalid or missing AI API key. Please verify your environment variables.' : null) ||
         err.response?.data?.reply || 
         err.message || 
         'AI Service unavailable. Please verify API configuration.';
@@ -188,7 +188,7 @@ export const KnowledgeAssistant: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-zinc-400 font-light">
-                Conversational Graph Reasoning · Gemini + Neo4j Engine
+                Conversational Graph Reasoning · AI + Neo4j Engine
               </p>
             </div>
           </div>
@@ -255,7 +255,7 @@ export const KnowledgeAssistant: React.FC = () => {
                   <span className="material-symbols-outlined text-4xl opacity-30">hub</span>
                   <p className="text-sm font-semibold text-white">Ask anything about your knowledge substrate</p>
                   <p className="text-xs text-zinc-400 font-light max-w-xs mx-auto">
-                    Gemini will synthesize answers while dynamically highlighting related nodes in the graph canvas.
+                    AI will synthesize answers while dynamically highlighting related nodes in the graph canvas.
                   </p>
                 </div>
               ) : (
@@ -335,7 +335,7 @@ export const KnowledgeAssistant: React.FC = () => {
                   type="text"
                   value={promptInput}
                   onChange={(e) => setPromptInput(e.target.value)}
-                  placeholder="Ask Gemini about your knowledge graph (Press Enter)..."
+                  placeholder="Ask AI about your knowledge graph (Press Enter)..."
                   className="flex-1 bg-transparent text-white placeholder-zinc-500 px-3 py-2 text-xs focus:outline-none"
                 />
                 <button

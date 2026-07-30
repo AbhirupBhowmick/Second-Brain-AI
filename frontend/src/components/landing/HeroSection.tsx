@@ -43,10 +43,10 @@ const HeroSection: React.FC = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-white/10 text-xs font-medium text-zinc-300 backdrop-blur-md">
             <span className="flex h-2 w-2 rounded-full bg-indigo-500" />
-            <span>Next-Generation Cognitive Workspace</span>
+            <span>AI Knowledge Platform</span>
           </div>
 
-          {/* Apple-Style Large Bold Headline */}
+          {/* Large Bold Headline */}
           <h1
             ref={headlineRef}
             className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.08]"
@@ -57,18 +57,18 @@ const HeroSection: React.FC = () => {
           {/* Subheading */}
           <p
             ref={subheadRef}
-            className="text-lg sm:text-xl text-zinc-400 font-normal leading-relaxed max-w-xl"
+            className="text-base sm:text-lg text-zinc-400 font-normal leading-relaxed max-w-xl"
           >
-            Transform scattered thoughts into an intelligent knowledge network that grows with you.
+            Capture notes, connect ideas, and explore them through an AI-powered knowledge graph.
           </p>
 
           {/* Action Buttons */}
           <div ref={buttonsRef} className="flex flex-wrap items-center gap-4 pt-2">
             <button
               onClick={() => navigate('/login')}
-              className="px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base transition-all duration-200 shadow-xl shadow-indigo-600/25 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer flex items-center gap-2 group"
+              className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all duration-200 shadow-xl shadow-indigo-600/25 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer flex items-center gap-2 group"
             >
-              <span>Start Building</span>
+              <span>Get Started</span>
               <svg
                 className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5"
                 fill="none"
@@ -81,7 +81,7 @@ const HeroSection: React.FC = () => {
 
             <button
               onClick={scrollToDemo}
-              className="px-6 py-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-zinc-200 font-medium text-base transition-all duration-200 hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
+              className="px-6 py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-zinc-200 font-medium text-sm transition-all duration-200 hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
             >
               <svg className="w-4 h-4 text-indigo-400" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
@@ -90,44 +90,11 @@ const HeroSection: React.FC = () => {
             </button>
           </div>
 
-          {/* Trusted Technologies */}
+          {/* Simple Technology Line */}
           <div ref={techRef} className="pt-6 border-t border-white/[0.08]">
-            <span className="text-xs uppercase tracking-wider text-zinc-500 font-mono font-medium block mb-3.5">
-              Trusted technologies:
-            </span>
-            <div className="flex flex-wrap items-center gap-6 text-zinc-400 text-sm font-medium">
-              <div className="flex items-center gap-2 bg-zinc-900/60 px-3 py-1.5 rounded-lg border border-white/[0.06]">
-                <svg className="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="12" r="2.5" />
-                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke="currentColor" strokeWidth="1.5" transform="rotate(60 12 12)" />
-                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke="currentColor" strokeWidth="1.5" transform="rotate(120 12 12)" />
-                </svg>
-                <span className="text-zinc-300">React</span>
-              </div>
-
-              <div className="flex items-center gap-2 bg-zinc-900/60 px-3 py-1.5 rounded-lg border border-white/[0.06]">
-                <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm4 0h-2v-8h2v8z" />
-                </svg>
-                <span className="text-zinc-300">Spring Boot</span>
-              </div>
-
-              <div className="flex items-center gap-2 bg-zinc-900/60 px-3 py-1.5 rounded-lg border border-white/[0.06]">
-                <svg className="w-4 h-4 text-sky-400" fill="currentColor" viewBox="0 0 24 24">
-                  <circle cx="6" cy="18" r="3" />
-                  <circle cx="18" cy="6" r="3" />
-                  <circle cx="18" cy="18" r="3" />
-                  <path stroke="currentColor" strokeWidth="1.5" d="M8.5 16.5L15.5 7.5M8.5 18H15" />
-                </svg>
-                <span className="text-zinc-300">Neo4j</span>
-              </div>
-
-              <div className="flex items-center gap-2 bg-zinc-900/60 px-3 py-1.5 rounded-lg border border-white/[0.06]">
-                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-                <span className="text-zinc-300">AI Powered</span>
-              </div>
-            </div>
+            <p className="text-xs text-zinc-400 font-medium">
+              Built with React • Spring Boot • Neo4j • AI
+            </p>
           </div>
         </div>
 
